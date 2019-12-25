@@ -16,6 +16,7 @@
 **/*.png
 **/*.xml
 **/obj/
+**/*.o
 **/makefile
 **/*.bin
 **/*.out
