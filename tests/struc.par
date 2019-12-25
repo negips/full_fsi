@@ -1,0 +1,49 @@
+#
+# nek parameter file
+#
+[GENERAL] 
+#startFrom = 
+stopAt = numSteps #endTime
+#endTime = 1.0
+numSteps =10
+
+dt = 1e-03
+timeStepper = bdf2 #char #steady
+variableDt = no 
+targetCFL = 0.5
+
+writeControl = timeStep #runTime
+writeInterval = 1000
+
+userParam01 = 200    # start time collecting statistics
+userParam02 = 20     # writeInterval 1D statistics
+
+dealiasing = yes
+filtering = hpfrt #hpfrt, none, explicit
+filterWeight = 10.0
+filterCutoffRatio = 0.9
+
+[PROBLEMTYPE]
+equation = structural
+stressFormulation = yes
+variableProperties = no
+
+[PRESSURE]
+preconditioner = semg_xxt
+residualTol = 1e-6
+#residualProj = yes
+
+[MESH]
+motion = ELASTICITY
+residualTol = 1e-6
+#residualProj = yes
+
+[VELOCITY]
+residualTol = 1e-8
+residualProj = yes
+density = 1.0
+viscosity = -10
+advection = yes
+
+
+

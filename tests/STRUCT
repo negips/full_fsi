@@ -1,0 +1,12 @@
+!     Variable declarions for Structural solutions
+
+
+      integer smult(lx1,ly1,lz1,lelv)
+
+      common /struct_vi/ smult
+
+
+      logical ifstruct
+
+      common /struct_sl/ ifstruct
+
