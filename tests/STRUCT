@@ -6,7 +6,7 @@
       common /struct_vi/ smult
 
 
-      logical ifstruct
+      logical fsi_struct,fsi_fluid
 
-      common /struct_sl/ ifstruct
+      common /struct_sl/ fsi_struct,fsi_fluid
 
