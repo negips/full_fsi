@@ -241,6 +241,10 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'CTIMER'
 
+!     mod_structural
+      include 'STRUCT'
+!      
+
       common /cgeom/ igeom
 
       ntot = lx1*ly1*lz1*nelv
@@ -294,14 +298,8 @@ c-----------------------------------------------------------------------
 
       else                ! PN-2/PN-2 formulation
 
-         if (fsi_struct) then
-!           Solve structural equations
-            if (ifgeom) then
-               if (.not.ifrich) call gengeom (igeom)
-               call geneig  (igeom)
-            endif
-              
-            call struct(igeom) 
+         if (fsi_ifstruct) then
+            continue
 
          else            
            call setprop

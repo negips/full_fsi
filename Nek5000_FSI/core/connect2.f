@@ -156,7 +156,7 @@ C     First check - use 1/Multiplicity
 C
       IF (IFHEAT) THEN 
          CALL COPY(TA,TMULT,NTOT)
-      ELSEIF 
+      ELSE 
          CALL COPY(TA,VMULT,NTOT)
       ENDIF
 c
