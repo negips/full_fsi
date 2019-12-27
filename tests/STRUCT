@@ -1,12 +1,63 @@
 !     Variable declarions for Structural solutions
 
 
-      integer smult(lx1,ly1,lz1,lelv)
-
-      common /struct_vi/ smult
-
-
       logical fsi_ifstruct,fsi_iffluid
 
       common /struct_sl/ fsi_ifstruct,fsi_iffluid
+
+!     Structural parameters
+
+      real struct_lambda
+      real struct_nu
+      real struct_young
+
+      common /struct_params/ struct_lambda,struct_nu,struct_young
+
+!     operator h1/h2 for structural equations 
+      real e1hv1(lx1,ly1,lz1,lelv)
+      real e1hv2(lx1,ly1,lz1,lelv)
+      real e1hx1(lx1,ly1,lz1,lelv)
+      real e1hx2(lx1,ly1,lz1,lelv)
+
+!     2nd eqn      
+      real e2hv1(lx1,ly1,lz1,lelv)
+      real e2hv2(lx1,ly1,lz1,lelv)
+      real e2hx1(lx1,ly1,lz1,lelv)
+      real e2hx2(lx1,ly1,lz1,lelv)
+
+
+!     Fields
+      real dispx(lx1,ly1,lz1,lelv)
+      real dispy(lx1,ly1,lz1,lelv)
+      real dispz(lx1,ly1,lz1,lelv)
+
+!     lag arrays for displacement      
+      real dxlag(lx1,ly1,lz1,lelv,2)
+      real dylag(lx1,ly1,lz1,lelv,2)
+      real dzlag(lx1,ly1,lz1,lelv,2)
+
+
+!     Using the original bfx,bfy,bfz arrays for
+!     forcing for the main structural equation
+!      real struct_bfvx(lx1,ly1,lz1,lelv)
+!      real struct_bfvy(lx1,ly1,lz1,lelv)
+!      real struct_bfvz(lx1,ly1,lz1,lelv)
+
+!     Forcing field for the displacement equation
+      real struct_bfdx(lx1,ly1,lz1,lelv)
+      real struct_bfdy(lx1,ly1,lz1,lelv)
+      real struct_bfdz(lx1,ly1,lz1,lelv)
+
+!     Lag arrays for forcing field for 
+!     2nd equation
+      real struct_abx1(lx1,ly1,lz1,lelv)
+      real struct_abx2(lx1,ly1,lz1,lelv)
+
+      real struct_aby1(lx1,ly1,lz1,lelv)
+      real struct_aby2(lx1,ly1,lz1,lelv)
+
+      real struct_abz1(lx1,ly1,lz1,lelv)
+      real struct_abz2(lx1,ly1,lz1,lelv)
+
+
 

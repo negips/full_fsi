@@ -251,7 +251,11 @@ c-----------------------------------------------------------------------
 
       call nekgsync
 
-      call setup_convect(2) ! Save conv vel
+!     mod_structural      
+      if (.not.fsi_ifstruct) then
+        call setup_convect(2) ! Save conv vel
+      endif
+!      
 
       if (iftran) call settime
       if (ifmhd ) call cfl_check
@@ -298,8 +302,10 @@ c-----------------------------------------------------------------------
 
       else                ! PN-2/PN-2 formulation
 
+!        mod_structural            
          if (fsi_ifstruct) then
             continue
+!           Right now doing everything in the usrchk routine
 
          else            
            call setprop
