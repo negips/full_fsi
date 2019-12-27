@@ -33,30 +33,6 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine userchk
-
-!      implicit none
-      include 'SIZE'
-      include 'INPUT'
-      include 'TSTEP'
-      include 'SOLN'
-
-      integer ltmp
-      parameter (ltmp=100)
-      integer*8 newnum(ltmp)
-      integer gsh_tmp
-      real tst(ltmp)
-
-      integer len2
-
-      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
-
-      integer i
-
-      
-      return
-      end
-c -----------------------------------------------------------------------
        subroutine userbc (ix,iy,iz,iside,ieg)
        implicit none
        include 'SIZE'
@@ -110,13 +86,18 @@ c-----------------------------------------------------------------------
       include 'INPUT'         ! ngeom
       include 'NEKNEK'        ! nfld_neknek
       include 'TSTEP'         ! ninter
+      include 'STRUCT'
 
 !      ngeom = 20   ! >2 => internal iterations
 !
 !      ninter = 2  ! order of interface extrapolation
 !
 !      nfld_neknek = 3   ! field to interpolate
-                        ! 3: u,v,pr (in 2D) 
+                        ! 3: u,v,pr (in 2D)
+
+
+      fsi_ifstruct = .true.
+      fsi_iffluid  = .false. 
 
       return
       end
@@ -142,6 +123,31 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine userchk
+
+      implicit none
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'TSTEP'
+      include 'SOLN'
+
+      integer ltmp
+      parameter (ltmp=100)
+      integer*8 newnum(ltmp)
+      integer gsh_tmp
+      real tst(ltmp)
+
+      integer len2
+
+!      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+
+      integer i
+
+      
+      return
+      end
+c -----------------------------------------------------------------------
 
 
 c automatically added by makenek
