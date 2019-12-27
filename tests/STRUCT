@@ -36,7 +36,6 @@
       real dylag(lx1,ly1,lz1,lelv,2)
       real dzlag(lx1,ly1,lz1,lelv,2)
 
-
 !     Using the original bfx,bfy,bfz arrays for
 !     forcing for the main structural equation
 !      real struct_bfvx(lx1,ly1,lz1,lelv)
@@ -48,6 +47,10 @@
       real struct_bfdy(lx1,ly1,lz1,lelv)
       real struct_bfdz(lx1,ly1,lz1,lelv)
 
+      common /struct_disp/ dispx,dispy,dispz,
+     $                     dxlag,dylag,dzlag,
+     $                     struct_bfdx,struct_bfdy,struct_bfdz 
+
 !     Lag arrays for forcing field for 
 !     2nd equation
       real struct_abx1(lx1,ly1,lz1,lelv)
@@ -58,6 +61,13 @@
 
       real struct_abz1(lx1,ly1,lz1,lelv)
       real struct_abz2(lx1,ly1,lz1,lelv)
+
+      common /struct_lag/ struct_abx1,struct_abx2,
+     $                    struct_aby1,struct_aby2,
+     $                    struct_abz1,struct_abz2
+
+
+
 
 
 

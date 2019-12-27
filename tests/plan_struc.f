@@ -65,6 +65,11 @@
      $ ,              dv1   (lx1,ly1,lz1,lelv)
      $ ,              dv2   (lx1,ly1,lz1,lelv)
      $ ,              dv3   (lx1,ly1,lz1,lelv)
+
+      real            resx4 (lx1,ly1,lz1,lelv)
+     $ ,              resx5 (lx1,ly1,lz1,lelv)
+     $ ,              resx6 (lx1,ly1,lz1,lelv)
+
       common /scrvh/  h1    (lx1,ly1,lz1,lelv)
      $ ,              h2    (lx1,ly1,lz1,lelv)
 
@@ -80,8 +85,9 @@
           call struct_makef
         else
 
-          call struct_sethlm
-          call struct_cresvif(resv1,resv2,resv3)   
+!          call struct_sethlm
+          call struct_cresvif(resv1,resv2,resv3,resx1,resx2,resx3)
+
                           
 
 !          call struct(igeom)
@@ -149,7 +155,6 @@ c     INTLOC =      integration type
          call rzero (e2hv2,ntot1)
 
       endif
-
 
 
       return 
@@ -435,6 +440,10 @@ c     Add contributions to F from lagged BD terms.
       integer iel,ifc,ifld,nface,nxy1,nxyz1
       real bc1,bc2,bc3,bc4
 
+      integer seqn
+
+      seqn = 1
+
       ifld  = 1
       nface = 2*ldim
       nxy1  = lx1*ly1
@@ -461,7 +470,8 @@ C
 
          if (cb.eq.'s  ' .or. cb.eq.'sl ' .or.
      $       cb.eq.'sh ' .or. cb.eq.'shl' ) then
-             call struct_faceiv (cb,trx,try,trz,iel,ifc,lx1,ly1,lz1)
+             call struct_faceiv (cb,trx,try,trz,iel,ifc,
+     $                           lx1,ly1,lz1,seqn)
              call faccvs (trx,try,trz,area(1,1,ifc,iel),ifc)
              if (ifqinp(ifc,iel)) call globrot (trx,try,trz,iel,ifc)
              goto 120
@@ -507,7 +517,7 @@ c
       end subroutine struct_bcneutr
 c-----------------------------------------------------------------------
 
-      subroutine struct_faceiv (cb,v1,v2,v3,iel,iface,nx,ny,nz)
+      subroutine struct_faceiv (cb,v1,v2,v3,iel,iface,nx,ny,nz,seqn)
 
 c     Assign fortran function boundary conditions to 
 c     face IFACE of element IEL for vector (V1,V2,V3).
@@ -518,7 +528,7 @@ c     face IFACE of element IEL for vector (V1,V2,V3).
       INCLUDE 'NEKUSE'
       INCLUDE 'PARALLEL'
 
-      integer nx,ny,nz,iel,ieg,iface
+      integer nx,ny,nz,iel,ieg,iface,seqn
 
       real v1,v2,v3
       dimension v1(nx,ny,nz),v2(nx,ny,nz),v3(nx,ny,nz)
@@ -539,49 +549,62 @@ c
       ieg = lglel(iel)
       call facind (kx1,kx2,ky1,ky2,kz1,kz2,nx,ny,nz,iface)
 
-
-      if (cb.eq.'s  ' .or. cb.eq.'sh ') then
-         do 200 iz=kz1,kz2
-         do 200 iy=ky1,ky2
-         do 200 ix=kx1,kx2
+      if (cb.eq.'v  ' .or. cb.eq.'ws ' .or. cb.eq.'mv '.or. 
+     $    cb.eq.'mvn') then
+c
+         do 105 iz=kz1,kz2
+         do 105 iy=ky1,ky2
+         do 105 ix=kx1,kx2
             if (optlevel.le.2) call nekasgn (ix,iy,iz,iel)
-            call struct_userbc  (ix,iy,iz,iface,ieg)
+            call userbc  (ix,iy,iz,iface,ieg,seqn)
+            v1(ix,iy,iz) = ux
+            v2(ix,iy,iz) = uy
+            v3(ix,iy,iz) = uz
+  105    continue
+         return
+
+      elseif (cb.eq.'s  ' .or. cb.eq.'sh ') then
+         do 106 iz=kz1,kz2
+         do 106 iy=ky1,ky2
+         do 106 ix=kx1,kx2
+            if (optlevel.le.2) call nekasgn (ix,iy,iz,iel)
+            call struct_userbc  (ix,iy,iz,iface,ieg,seqn)
             v1(ix,iy,iz) = trx
             v2(ix,iy,iz) = try
             v3(ix,iy,iz) = trz
-  200    continue
+  106    continue
          return
 
       elseif (cb.eq.'sl ' .or. cb.eq.'shl') then
 
-         do 220 iz=kz1,kz2
-         do 220 iy=ky1,ky2
-         do 220 ix=kx1,kx2
+         do 107 iz=kz1,kz2
+         do 107 iy=ky1,ky2
+         do 107 ix=kx1,kx2
             if (optlevel.le.2) call nekasgn (ix,iy,iz,iel)
-            call struct_userbc  (ix,iy,iz,iface,ieg)
+            call struct_userbc  (ix,iy,iz,iface,ieg,seqn)
             v1(ix,iy,iz) = trn
             v2(ix,iy,iz) = tr1
             v3(ix,iy,iz) = tr2
-  220    continue
+  107    continue
 C
       elseif (cb.eq.'ms ') then
 c
-         do 240 iz=kz1,kz2
-         do 240 iy=ky1,ky2
-         do 240 ix=kx1,kx2
+         do 108 iz=kz1,kz2
+         do 108 iy=ky1,ky2
+         do 108 ix=kx1,kx2
             if (optlevel.le.2) call nekasgn (ix,iy,iz,iel)
-            call struct_userbc  (ix,iy,iz,iface,ieg)
+            call struct_userbc(ix,iy,iz,iface,ieg,seqn)
             v1(ix,iy,iz) = -pa
             v2(ix,iy,iz) = tr1
             v3(ix,iy,iz) = tr2
-  240    continue
+  108    continue
 
       endif
 
       return
       end subroutine struct_faceiv
 c-----------------------------------------------------------------------
-      subroutine struct_userbc (ix,iy,iz,iside,ieg)
+      subroutine struct_userbc (ix,iy,iz,iside,ieg,seqn)
 
       implicit none
        
@@ -589,9 +612,10 @@ c-----------------------------------------------------------------------
       include 'NEKUSE'          ! UX, UY, UZ, TEMP, X, Y, PA
 
       integer ix,iy,iz,iside,ieg
+      integer seqn
       real amp
 
-      ux = 1.0
+      ux = 0.0
       uy = 0.
       uz = 0.
 
@@ -604,12 +628,11 @@ c-----------------------------------------------------------------------
       return
       end
 c -----------------------------------------------------------------------
-      subroutine struct_cresvif (resv1,resv2,resv3)
-C---------------------------------------------------------------------
+      subroutine struct_cresvif (resv1,resv2,resv3,
+     $                           resx1,resx2,resx3)
 C
 C     Compute startresidual/right-hand-side in the velocity solver
 C
-C---------------------------------------------------------------------
 
       implicit none
 
@@ -620,9 +643,13 @@ C---------------------------------------------------------------------
       include 'SOLN'
 
 !      include 'TOTAL'
-      real           resv1 (lx1,ly1,lz1,1)
-      real           resv2 (lx1,ly1,lz1,1)
-      real           resv3 (lx1,ly1,lz1,1)
+      real           resv1 (lx1,ly1,lz1,lelv)
+      real           resv2 (lx1,ly1,lz1,lelv)
+      real           resv3 (lx1,ly1,lz1,lelv)
+      real           resx1 (lx1,ly1,lz1,lelv)
+      real           resx2 (lx1,ly1,lz1,lelv)
+      real           resx3 (lx1,ly1,lz1,lelv)
+
       real           h1    (lx1,ly1,lz1,1)
       real           h2    (lx1,ly1,lz1,1)
 
@@ -631,29 +658,34 @@ C---------------------------------------------------------------------
      $ ,             w2    (lx1,ly1,lz1,lelv)
      $ ,             w3    (lx1,ly1,lz1,lelv)
 
+      integer seqn
+
 !      common /cgeom/ igeom
 
 
 !     Save fields to lag arrays
       if (igeom.eq.2) call lagvel
-!      if (iftran.and.igeom.eq.2) call lagdx 
-
-      call struct_bcdirvc(vx,vy,vz,v1mask,v2mask,v3mask)
+      seqn = 1
+      call struct_bcdirvc(vx,vy,vz,v1mask,v2mask,v3mask,seqn)
       call struct_bcneutr       ! add traction to rhs 
 
       call opcopy(resv1,resv2,resv3,bfx,bfy,bfz)
 
+!     displacements      
+      if (iftran.and.igeom.eq.2) call lagdx 
+
 !     prabal. Need to create new masks for dx... 
-!      call bcdirvc (dispx,dispy,dispz,v1mask,v2mask,v3mask)
+      seqn = 2
+      call struct_bcdirvc(dispx,dispy,dispz,v1mask,v2mask,v3mask,seqn)
 
+      call opcopy(resx1,resx2,resx3,
+     $            struct_bfdx,struct_bfdy,struct_bfdz)
 
-!      call ophx    (w1,w2,w3,vx,vy,vz,h1,h2)
-!      call opsub2  (resv1,resv2,resv3,w1,w2,w3)
 
       RETURN
       END
 c-----------------------------------------------------------------------
-      subroutine struct_bcdirvc(v1,v2,v3,mask1,mask2,mask3)
+      subroutine struct_bcdirvc(v1,v2,v3,mask1,mask2,mask3,seqn)
 
 C     Apply Dirichlet boundary conditions to surface of vector (V1,V2,V3).
 C     Use IFIELD as a guide to which boundary conditions are to be applied.
@@ -683,6 +715,8 @@ c
       equivalence (cb1,cb)
 c
       logical ifonbc
+
+      integer seqn
 c
       ifonbc = .false.
 c
@@ -730,7 +764,7 @@ c     write(6,*) 'bcdirv: ifield',ifield
      $          cb1(1).eq.'d'.or.cb1(2).eq.'d'.or.cb1(3).eq.'d') then
 
                 call struct_faceiv (cb,tmp1(1,1,1,ie),tmp2(1,1,1,ie),
-     $                       tmp3(1,1,1,ie),ie,iface,lx1,ly1,lz1)
+     $                       tmp3(1,1,1,ie),ie,iface,lx1,ly1,lz1,seqn)
 
                 if ( ifqinp(iface,ie) )
      $          call globrot (tmp1(1,1,1,ie),tmp2(1,1,1,ie),
@@ -754,7 +788,7 @@ C
          else
             call opdsop(tmp1,tmp2,tmp3,'MNA')
          endif
- 2100 CONTINUE
+ 2100 continue
 C
 C     Copy temporary array to velocity arrays.
 C
@@ -983,7 +1017,35 @@ C---------------------------------------------------------------------------
       end subroutine struct_elast
 c-----------------------------------------------------------------------
 
+      subroutine lagdx
 
+!     Keep old velocity field(s) 
+      
+      implicit none
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'SOLN'
+      include 'TSTEP'
+      include 'STRUCT'
+
+      integer ntot1,ilag
+
+      ntot1 = lx1*ly1*lz1*nelv
+
+!      do 100 ilag=nbdinp-1,2,-1
+      do 100 ilag=3-1,2,-1
+         call copy (dxlag(1,1,1,1,ilag),dxlag(1,1,1,1,ilag-1),ntot1)
+         call copy (dylag(1,1,1,1,ilag),dylag(1,1,1,1,ilag-1),ntot1)
+         if (ldim.eq.3)
+     $   call copy (dzlag(1,1,1,1,ilag),dzlag(1,1,1,1,ilag-1),ntot1)
+ 100  continue
+
+      call opcopy (vxlag,vylag,vzlag,dispx,dispy,dispz)
+
+      return
+      end subroutine lagdx
+!---------------------------------------------------------------------- 
 
       subroutine struct_intflag 
       include 'SIZE'
