@@ -67,6 +67,11 @@
      $                    struct_abz1,struct_abz2
 
 
+!     Krylov field
+      integer struct_nkryl
+      parameter (struct_nkryl=20)
+      real struct_krylv(lx1*ly1*lz1*lelv,ldim,struct_nkryl)
+      real struct_krylx(lx1*ly1*lz1*lelv,ldim,struct_nkryl)
 
 
 

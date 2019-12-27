@@ -88,7 +88,7 @@
 !          call struct_sethlm
           call struct_cresvif(resv1,resv2,resv3,resx1,resx2,resx3)
 
-                          
+          call solve_elasticity                          
 
 !          call struct(igeom)
         endif
@@ -1046,53 +1046,97 @@ c-----------------------------------------------------------------------
       return
       end subroutine lagdx
 !---------------------------------------------------------------------- 
+      subroutine solve_elasticity
 
-      subroutine struct_intflag 
+!     Solve the structural system using GMRES
+
+      implicit none
+
       include 'SIZE'
-      include 'TOTAL'
-      include 'NEKNEK'
-      character*3 cb
-      character*2 cb2
-      equivalence (cb2,cb)
-      integer j,e,f
+      include 'INPUT'   ! iftran
+      include 'SOLN'
+      include 'MASS'    ! bm1
+      include 'TSTEP'
 
-c     Set interpolation flag: points with boundary condition = 'int,'
-c     'inp','ins'
-c     set intflag=1. 
-c
-c     Boundary conditions are changed back to 'v  ','t  ' or 's  '.
+      integer i,j,miter
+      real betav,betax,beta,resid0
 
-      nfaces = 2*ldim
-      
-      nflag=nelt*nfaces
-      call izero(intflag,nflag)
+      integer nt
 
-      do j=1,nfield
-         nel = nelfld(j)
-      do e=1,nel
-      do f=1,nfaces
-         cb=cbc(f,e,j)
-         if (cb2.eq.'in') then
-            intflag(f,e)=1
-            if (j.ge.2) cbc(f,e,j)='t  '
-            if (j.eq.1) cbc(f,e,j)='v  '
-c            if (cb.eq.'inp') cbc(f,e,ifield)='on ' ! Pressure
-c            if (cb.eq.'inp') cbc(f,e,ifield)='o  ' ! Pressure
-            if (cb.eq.'inp') cbc(f,e,j)='o  ' ! Pressure
-            if (cb.eq.'ins') cbc(f,e,j)='s  ' ! Stress
+      logical ifdss     ! if dssum in elast
+      logical ifmask    ! Not sure about this yet
+
+      miter = 2
+
+!     Continuous edges      
+      call opdssum(resv1,resv2,resv3)
+      call opcolv(resv1,resv2,resv3,vmult)
+
+      betav  = glsc3_wt(resv1,resv2,resv3,resv1,resv2,resv3,bm1)
+      beta   = sqrt(betav)
+      resid0 = beta
+      if (iftran) then
+!       Continuous edges      
+        call opdssum(resv4,resv5,resv6)
+        call opcolv(resv4,resv5,resv6,vmult)
            
-         endif
-      enddo
-      enddo
-      enddo
+        betax  = glsc3_wt(resv4,resv5,resv6,resv4,resv5,resv6,bm1)
+        beta   = sqrt(betav + betax)
+        resid0 = beta
+!       normalize x        
+        call opcmult(resv4,resv5,resv6,1./beta)
+!       save x part of first vector        
+        call opcopy(struct_krylx(1,1,1),struct_krylx(1,2,1),
+     $              struct_krylx(1,3,1),resv4,resv5,resv6)
+      endif
 
-c     zero out valint
-      do i=1,nfld_neknek
-        call rzero(valint(1,1,1,1,i),lx1*ly1*lz1*nelt)
-      enddo
+!     save v      
+      call opcmult(resv1,resv2,resv3,1./beta)
+
+!     save v part of first vector. This is the x part if its not a
+!     transient simulation 
+      call opcopy(struct_krylv(1,1,1),struct_krylv(1,2,1),
+     $              struct_krylv(1,3,1),resv1,resv2,resv3)
+
+      ifmsk = .false. ! ?
+      ifdss = .true.
+
+      nt = lx1*ly1*lz1*nelv
+      call copy(htmp,bm1,nt)
+      call cmult(htmp,bd(1)/DT,nt)
+
+      do i=1,miter
+
+!        Apply elasticity operator      
+         if (iftran) then
+
+!          bd(1)M/DT*v               
+           call opcopy(w4,w5,w6,resv1,resv2,resv3)
+           call opcolv(w4,w5,w6,htmp)
+           call opcolv(w4,w5,w6,resv1,resv2,resv3)
+
+!          Elasticity operator           
+           call elast(w1,w2,w3,resv4,resv5,resv6,lambda,g,ifmsk,ifdss)
+!          w1+w4,... 
+           call opadd2(w1,w2,w3,w4,w5,w6)
+
+!          2nd equation
+           call opcolv3c(w4,w5,w6,resv1,resv2,resv3,bm1,-1.)
+           call opadd2col(w4,w5,w6,resv4,resv5,resv6,htmp)
+
+
+         else  
+           call elast(w1,w2,w3,resv1,resv2,resv3,lambda,g,ifmsk,ifdss)
+         endif
+
+
+      enddo         
+
+
 
       return
-      end
+      end subroutine solve_elasticity            
+
 c------------------------------------------------------------------------
 
 
