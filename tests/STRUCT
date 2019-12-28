@@ -75,5 +75,22 @@
       real struct_hessen(struct_nkryl,struct_nkryl+1)
 
 
+!     test arrays
+      real ts1(lx1*ly1*lz1*lelv)
+      real ts2(lx1*ly1*lz1*lelv)
+      real ts3(lx1*ly1*lz1*lelv)
+      real ts4(lx1*ly1*lz1*lelv)
+      real ts5(lx1*ly1*lz1*lelv)
+      real ts6(lx1*ly1*lz1*lelv)
+
+      common /struct_testing/ ts1,ts2,ts3,ts4,ts5,ts6
+
+
+
+
+
+
+
+
 
 

@@ -175,15 +175,9 @@ c        uij := jac*( du_i / dx_j )
 
          w   = a*w3m1(i,1,1)*jacmi(i,e)  ! note, ry has jac in it.
 
-<<<<<<< HEAD
-	 u12=u12+u21
-	 u13=u13+u31
-	 u23=u23+u32
-=======
          u12=u12+u21
          u13=u13+u31
          u23=u23+u32
->>>>>>> 090e27fadbe79313c158191696da897417cf1360
 
          ur(i)=(u1d*rxm1(i,1,1,e)+u12*rym1(i,1,1,e)+u13*rzm1(i,1,1,e))*w
          us(i)=(u1d*sxm1(i,1,1,e)+u12*sym1(i,1,1,e)+u13*szm1(i,1,1,e))*w

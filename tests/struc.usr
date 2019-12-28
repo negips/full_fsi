@@ -54,7 +54,7 @@ c -----------------------------------------------------------------------
 
       real amp, ran
       
-      amp = 0.2
+      amp = 0.0
 
       ran = 3.e4*(ieg+X*sin(Y)+Z*cos(Y))
      $     + 4.7e2*ix*iy*iz - 1.5e3*ix*iy + .5e5*ix
@@ -131,6 +131,7 @@ c-----------------------------------------------------------------------
       include 'INPUT'
       include 'TSTEP'
       include 'SOLN'
+      include 'STRUCT'
 
       integer ltmp
       parameter (ltmp=100)
@@ -143,6 +144,16 @@ c-----------------------------------------------------------------------
 !      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
       integer i
+
+      if (istep.eq.1) then
+        call plan_s
+
+        call outpost(ts1,ts2,ts3,pr,t,'  ')
+        call outpost(ts4,ts5,ts6,pr,t,'  ')
+
+      
+        call exitt
+      endif        
 
       
       return

@@ -57,6 +57,8 @@
       include 'NEKNEK'        ! igeom
       include 'GEOM'          ! ifgeom
 
+      include 'SOLN'          ! just testing
+
       real resv1,resv2,resv3,dv1,dv2,dv3,h1,h2
 
       common /scrns/  resv1 (lx1,ly1,lz1,lelv)
@@ -66,9 +68,9 @@
      $ ,              dv2   (lx1,ly1,lz1,lelv)
      $ ,              dv3   (lx1,ly1,lz1,lelv)
 
-      real            resx4 (lx1,ly1,lz1,lelv)
-     $ ,              resx5 (lx1,ly1,lz1,lelv)
-     $ ,              resx6 (lx1,ly1,lz1,lelv)
+      real            resx1 (lx1,ly1,lz1,lelv)
+     $ ,              resx2 (lx1,ly1,lz1,lelv)
+     $ ,              resx3 (lx1,ly1,lz1,lelv)
 
       common /scrvh/  h1    (lx1,ly1,lz1,lelv)
      $ ,              h2    (lx1,ly1,lz1,lelv)
@@ -85,10 +87,21 @@
           call struct_makef
         else
 
+!!         testing              
+!          call opcopy(ts1,ts2,ts3,bfx,bfy,bfz)  
+!          call opcopy(ts4,ts5,ts6,
+!     $                struct_bfdx,struct_bfdy,struct_bfdz)  
+
 !          call struct_sethlm
           call struct_cresvif(resv1,resv2,resv3,resx1,resx2,resx3)
 
-          call solve_elasticity                          
+!         testing              
+!          call opcopy(ts1,ts2,ts3,resv1,resv2,resv3)  
+          call opcopy(ts4,ts5,ts6,
+     $                struct_bfdx,struct_bfdy,struct_bfdz)  
+
+
+          call solve_elasticity(resv1,resv2,resv3,resx1,resx2,resx3) 
 
 !          call struct(igeom)
         endif
@@ -425,6 +438,9 @@ c     Add contributions to F from lagged BD terms.
       INCLUDE 'GEOM'
       INCLUDE 'INPUT'
 
+!     debugging
+      include 'STRUCT'
+
       real trx,try,trz,stc
       common /scrsf/ trx(lx1,ly1,lz1)
      $             , try(lx1,ly1,lz1)
@@ -441,6 +457,7 @@ c     Add contributions to F from lagged BD terms.
       real bc1,bc2,bc3,bc4
 
       integer seqn
+      integer j
 
       seqn = 1
 
@@ -507,12 +524,18 @@ C
 !             endif
 !         endif
 C
+
   120    call add2 (bfx(1,1,1,iel),trx,nxyz1)
          call add2 (bfy(1,1,1,iel),try,nxyz1)
          if (ldim.eq.3) call add2 (bfz(1,1,1,iel),trz,nxyz1)
-c
+
+         
+         call copy (ts1((iel-1)*nxyz1+1),trx,nxyz1)
+         call copy (ts2((iel-1)*nxyz1+1),try,nxyz1)
+         if (ldim.eq.3) call copy(ts3((iel-1)*nxyz1+1),trz,nxyz1)
+
   104 continue
-c
+
       return
       end subroutine struct_bcneutr
 c-----------------------------------------------------------------------
@@ -556,7 +579,7 @@ c
          do 105 iy=ky1,ky2
          do 105 ix=kx1,kx2
             if (optlevel.le.2) call nekasgn (ix,iy,iz,iel)
-            call userbc  (ix,iy,iz,iface,ieg,seqn)
+            call struct_userbc  (ix,iy,iz,iface,ieg,seqn)
             v1(ix,iy,iz) = ux
             v2(ix,iy,iz) = uy
             v3(ix,iy,iz) = uz
@@ -572,6 +595,8 @@ c
             v1(ix,iy,iz) = trx
             v2(ix,iy,iz) = try
             v3(ix,iy,iz) = trz
+!           debugging
+!            write(6,*) x,y,trx
   106    continue
          return
 
@@ -981,6 +1006,7 @@ C---------------------------------------------------------------------------
       implicit none      
 
       include 'SIZE'
+      include 'INPUT'
       include 'SOLN'    ! v1mask,...
 
       real w1(1),w2(1),w3(1),u1(1),u2(1),u3(1),lambda,g
@@ -1057,14 +1083,15 @@ c-----------------------------------------------------------------------
       include 'SOLN'
       include 'MASS'    ! bm1
       include 'TSTEP'
+      include 'STRUCT'
 
-      integer i,j,miter
+      integer i,j,ipass,miter
       real betav,betax,beta,resid0
 
       integer nt
 
       logical ifdss     ! if dssum in elast
-      logical ifmask    ! Not sure about this yet
+      logical ifmsk     ! Not sure about this yet
       integer nk
 
       real rv1(lx1*ly1*lz1*lelv)
@@ -1075,10 +1102,33 @@ c-----------------------------------------------------------------------
       real rx2(lx1*ly1*lz1*lelv)
       real rx3(lx1*ly1*lz1*lelv)
 
+      real w1(lx1*ly1*lz1*lelv)
+      real w2(lx1*ly1*lz1*lelv)
+      real w3(lx1*ly1*lz1*lelv)
+
+      real w4(lx1*ly1*lz1*lelv)
+      real w5(lx1*ly1*lz1*lelv)
+      real w6(lx1*ly1*lz1*lelv)
+
       real resv(lx1*ly1*lz1*lelv,3)
       real resx(lx1*ly1*lz1*lelv,3)
 
+      real htmp(lx1*ly1*lz1*lelv)
+
       real op_glsc2_wt
+
+      real young,g,nu,lambda
+      character*32 outfmt
+
+
+!     move somewhere else      
+      young=100.
+      nu=0.3
+
+      lambda = young*nu/( (1+nu)*(1-2*nu) ) ! for 3D, and 2D plane strain
+
+      g      = .5*young/(1+nu)
+!----------------------------------------     
 
       nk = struct_nkryl
       call rzero(struct_hessen,nk*(nk+1))
@@ -1160,7 +1210,7 @@ c-----------------------------------------------------------------------
      $                 w4,w5,w6,bm1)
                
             beta  = sqrt(betav + betax)
-            struct_hessen(j,i) = hessen(j,i)+beta
+            struct_hessen(j,i) = struct_hessen(j,i)+beta
 
             call opadd2cm(w1,w2,w3,struct_krylv(1,1,j),
      $                 struct_krylv(1,2,j),struct_krylv(1,3,j),-beta)
@@ -1184,24 +1234,36 @@ c-----------------------------------------------------------------------
 !         save x part of first vector        
           call opcopy(struct_krylx(1,1,1),struct_krylx(1,2,1),
      $                struct_krylx(1,3,1),rx1,rx2,rx3)
-        endif
+!         normalize
+          call opcmult(rv1,rv2,rv3,1./beta)
+          call opcmult(rx1,rx2,rx3,1./beta)
 
-!       normalize
-        call opcmult(rv1,rv2,rv3,1./beta)
-        call opcmult(rx1,rx2,rx3,1./beta)
-
-!       save new vector
-        call opcopy(struct_krylv(1,1,1),struct_krylv(1,2,1),
-     $                struct_krylv(1,3,1),rv1,rv2,rv3)
-        call opcopy(struct_krylx(1,1,1),struct_krylx(1,2,1),
-     $                struct_krylx(1,3,1),rx1,rx2,rx3)
+!         save new vector
+          call opcopy(struct_krylv(1,1,1),struct_krylv(1,2,1),
+     $                  struct_krylv(1,3,1),rv1,rv2,rv3)
+          call opcopy(struct_krylx(1,1,1),struct_krylx(1,2,1),
+     $                  struct_krylx(1,3,1),rx1,rx2,rx3)
 
         else  
           call elast(w1,w2,w3,rv1,rv2,rv3,lambda,g,ifmsk,ifdss)
 !         needs more work... 
         endif
-      enddo       ! i=1,miters 
+      enddo       ! i=1,miter 
 
+
+      call blank(outfmt,32)
+      write(outfmt,'(A7,I2,A13)') '(A3,2x,',miter,'(E12.2E2,2x))'
+
+      write(6,*) outfmt
+
+      if (nid.eq.0) then
+        do i=1,miter+1
+          write(6,outfmt), 'Hes',(struct_hessen(i,j),j=1,miter)
+        enddo  
+      endif
+
+      call outpost(rv1,rv2,rv3,pr,t,'  ')
+      call outpost(rx1,rx2,rx3,pr,t,'  ')
 
 
       return

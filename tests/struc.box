@@ -17,4 +17,4 @@ Box1
 -2 -2                                 nelx,nely for Box
 3.0 3.25 1.0                                x0,xn,gain
 0.0 1.0 1.0                                y0,yn,gain
-v  ,O  ,W  ,v  ,   ,   
+s  ,s  ,W  ,s  ,   ,   
