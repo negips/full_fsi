@@ -1046,7 +1046,7 @@ c-----------------------------------------------------------------------
       return
       end subroutine lagdx
 !---------------------------------------------------------------------- 
-      subroutine solve_elasticity
+      subroutine solve_elasticity(rv1,rv2,rv3,rx1,rx2,rx3)
 
 !     Solve the structural system using GMRES
 
@@ -1065,38 +1065,58 @@ c-----------------------------------------------------------------------
 
       logical ifdss     ! if dssum in elast
       logical ifmask    ! Not sure about this yet
+      integer nk
+
+      real rv1(lx1*ly1*lz1*lelv)
+      real rv2(lx1*ly1*lz1*lelv)
+      real rv3(lx1*ly1*lz1*lelv)
+
+      real rx1(lx1*ly1*lz1*lelv)
+      real rx2(lx1*ly1*lz1*lelv)
+      real rx3(lx1*ly1*lz1*lelv)
+
+      real resv(lx1*ly1*lz1*lelv,3)
+      real resx(lx1*ly1*lz1*lelv,3)
+
+      real op_glsc2_wt
+
+      nk = struct_nkryl
+      call rzero(struct_hessen,nk*(nk+1))
 
       miter = 2
 
-!     Continuous edges      
-      call opdssum(resv1,resv2,resv3)
-      call opcolv(resv1,resv2,resv3,vmult)
+      call opcopy(resv(1,1),resv(1,2),resv(1,3),rv1,rv2,rv3)
+      call opcopy(resx(1,1),resx(1,2),resx(1,3),rx1,rx2,rx3)
 
-      betav  = glsc3_wt(resv1,resv2,resv3,resv1,resv2,resv3,bm1)
+!     Continuous edges      
+      call opdssum(rv1,rv2,rv3)
+      call opcolv(rv1,rv2,rv3,vmult)
+
+      betav  = op_glsc2_wt(rv1,rv2,rv3,rv1,rv2,rv3,bm1)
       beta   = sqrt(betav)
       resid0 = beta
       if (iftran) then
 !       Continuous edges      
-        call opdssum(resv4,resv5,resv6)
-        call opcolv(resv4,resv5,resv6,vmult)
+        call opdssum(rx1,rx2,rx3)
+        call opcolv(rx1,rx2,rx3,vmult)
            
-        betax  = glsc3_wt(resv4,resv5,resv6,resv4,resv5,resv6,bm1)
+        betax  = op_glsc2_wt(rx1,rx2,rx3,rx1,rx2,rx3,bm1)
         beta   = sqrt(betav + betax)
         resid0 = beta
 !       normalize x        
-        call opcmult(resv4,resv5,resv6,1./beta)
+        call opcmult(rx1,rx2,rx3,1./beta)
 !       save x part of first vector        
         call opcopy(struct_krylx(1,1,1),struct_krylx(1,2,1),
-     $              struct_krylx(1,3,1),resv4,resv5,resv6)
+     $              struct_krylx(1,3,1),rx1,rx2,rx3)
       endif
 
-!     save v      
-      call opcmult(resv1,resv2,resv3,1./beta)
+!     normalize
+      call opcmult(rv1,rv2,rv3,1./beta)
 
 !     save v part of first vector. This is the x part if its not a
 !     transient simulation 
       call opcopy(struct_krylv(1,1,1),struct_krylv(1,2,1),
-     $              struct_krylv(1,3,1),resv1,resv2,resv3)
+     $              struct_krylv(1,3,1),rv1,rv2,rv3)
 
       ifmsk = .false. ! ?
       ifdss = .true.
@@ -1106,31 +1126,81 @@ c-----------------------------------------------------------------------
       call cmult(htmp,bd(1)/DT,nt)
 
       do i=1,miter
+!       Apply elasticity operator      
+        if (iftran) then
+!         Perform Ax            
+!         bd(1)M/DT*v               
+          call opcopy(w4,w5,w6,rv1,rv2,rv3)
+          call opcolv(w4,w5,w6,htmp)
 
-!        Apply elasticity operator      
-         if (iftran) then
+!         Elasticity operator           
+          call elast(w1,w2,w3,rx1,rx2,rx3,lambda,g,ifmsk,ifdss)
+!         w1+w4,... 
+          call opadd2(w1,w2,w3,w4,w5,w6)
 
-!          bd(1)M/DT*v               
-           call opcopy(w4,w5,w6,resv1,resv2,resv3)
-           call opcolv(w4,w5,w6,htmp)
-           call opcolv(w4,w5,w6,resv1,resv2,resv3)
+!         2nd equation
+          call opcolv3c(w4,w5,w6,rv1,rv2,rv3,bm1,-1.)
+          call opadd2col(w4,w5,w6,rx1,rx2,rx3,htmp)
 
-!          Elasticity operator           
-           call elast(w1,w2,w3,resv4,resv5,resv6,lambda,g,ifmsk,ifdss)
-!          w1+w4,... 
-           call opadd2(w1,w2,w3,w4,w5,w6)
+          do ipass=1,1
+          do j=1,i
+          
+            call opdssum(w1,w2,w3)
+            call opcolv(w1,w2,w3,vmult)
 
-!          2nd equation
-           call opcolv3c(w4,w5,w6,resv1,resv2,resv3,bm1,-1.)
-           call opadd2col(w4,w5,w6,resv4,resv5,resv6,htmp)
+            call opdssum(w4,w5,w6)
+            call opcolv(w4,w5,w6,vmult)
 
+            betav = op_glsc2_wt(struct_krylv(1,1,j),
+     $               struct_krylv(1,2,j),struct_krylv(1,3,j),
+     $                w1,w2,w3,bm1)
 
-         else  
-           call elast(w1,w2,w3,resv1,resv2,resv3,lambda,g,ifmsk,ifdss)
-         endif
+            betax = op_glsc2_wt(struct_krylx(1,1,j),
+     $                struct_krylx(1,2,j),struct_krylx(1,3,j),
+     $                 w4,w5,w6,bm1)
+               
+            beta  = sqrt(betav + betax)
+            struct_hessen(j,i) = hessen(j,i)+beta
 
+            call opadd2cm(w1,w2,w3,struct_krylv(1,1,j),
+     $                 struct_krylv(1,2,j),struct_krylv(1,3,j),-beta)
+          enddo  ! j
+          enddo  ! ipass
 
-      enddo         
+!         Residual after projection            
+          betav = op_glsc2_wt(struct_krylv(1,1,j),
+     $             struct_krylv(1,2,j),struct_krylv(1,3,j),
+     $              w1,w2,w3,bm1)
+
+          betax = op_glsc2_wt(struct_krylx(1,1,j),
+     $              struct_krylx(1,2,j),struct_krylx(1,3,j),
+     $               w4,w5,w6,bm1)
+          
+          beta = sqrt(betav + betax)
+          struct_hessen(i+1,i)=beta
+
+!         normalize x        
+          call opcmult(rx1,rx2,rx3,1./beta)
+!         save x part of first vector        
+          call opcopy(struct_krylx(1,1,1),struct_krylx(1,2,1),
+     $                struct_krylx(1,3,1),rx1,rx2,rx3)
+        endif
+
+!       normalize
+        call opcmult(rv1,rv2,rv3,1./beta)
+        call opcmult(rx1,rx2,rx3,1./beta)
+
+!       save new vector
+        call opcopy(struct_krylv(1,1,1),struct_krylv(1,2,1),
+     $                struct_krylv(1,3,1),rv1,rv2,rv3)
+        call opcopy(struct_krylx(1,1,1),struct_krylx(1,2,1),
+     $                struct_krylx(1,3,1),rx1,rx2,rx3)
+
+        else  
+          call elast(w1,w2,w3,rv1,rv2,rv3,lambda,g,ifmsk,ifdss)
+!         needs more work... 
+        endif
+      enddo       ! i=1,miters 
 
 
 

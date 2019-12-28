@@ -72,6 +72,7 @@
       parameter (struct_nkryl=20)
       real struct_krylv(lx1*ly1*lz1*lelv,ldim,struct_nkryl)
       real struct_krylx(lx1*ly1*lz1*lelv,ldim,struct_nkryl)
+      real struct_hessen(struct_nkryl,struct_nkryl+1)
 
 
 
