@@ -74,6 +74,8 @@
       real struct_krylx(lx1*ly1*lz1*lelv,ldim,struct_nkryl)
       real struct_hessen(struct_nkryl,struct_nkryl+1)
 
+      common /struct_gmres/ struct_krylv,struct_krylx,struct_hessen
+
 
 !     test arrays
       real ts1(lx1*ly1*lz1*lelv)

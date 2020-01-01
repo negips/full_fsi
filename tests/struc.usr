@@ -145,16 +145,25 @@ c-----------------------------------------------------------------------
 
       integer i
 
+      call opzero(ts1,ts2,ts3)
+      call opzero(ts4,ts5,ts6)
+!      call oprone(dispx,dispy,dispz)
+
       if (istep.eq.1) then
         call plan_s
 
-        call outpost(ts1,ts2,ts3,pr,t,'  ')
-        call outpost(ts4,ts5,ts6,pr,t,'  ')
+        call outpost(ts1,ts2,ts3,pr,t,'dbg')
+        call outpost(ts4,ts5,ts6,pr,t,'dbg')
 
-      
+        do i=1,struct_nkryl
+          call outpost(struct_krylv(1,1,i),struct_krylv(1,2,i),
+     $            struct_krylv(1,3,i),pr,t,'slv')
+          call outpost(struct_krylx(1,1,i),struct_krylx(1,2,i),
+     $            struct_krylx(1,3,i),pr,t,'slx')
+        enddo
+
         call exitt
       endif        
-
       
       return
       end
