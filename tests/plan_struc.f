@@ -1044,8 +1044,8 @@ C---------------------------------------------------------------------------
 
       enddo
 
-!     Add negative sign
-      call opcmult(w1,w2,w3,-1.)
+!     Add negative sign?
+!      call opcmult(w1,w2,w3,-1.)
 
 !      if (ifdss) call opdssum(w1,w2,w3)
 
