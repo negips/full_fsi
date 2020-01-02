@@ -60,10 +60,9 @@
 
       include 'SOLN'          ! just testing
 
-      real resv1,resv2,resv3,resx1,resx2,resx3,h2
+!      real resv1,resv2,resv3,resx1,resx2,resx3,h2
 
-
-      common /scrns/  resv1 (lx1,ly1,lz1,lelv)
+      real            resv1 (lx1,ly1,lz1,lelv)
      $ ,              resv2 (lx1,ly1,lz1,lelv)
      $ ,              resv3 (lx1,ly1,lz1,lelv)
      $ ,              resx1 (lx1,ly1,lz1,lelv)
@@ -76,8 +75,8 @@
      $ ,              dv3   (lx1,ly1,lz1,lelv)
 
 
-      real h1
-      common /scrvh/  h1    (lx1,ly1,lz1,lelv)
+!      real h1
+      real            h1    (lx1,ly1,lz1,lelv)
 
 
 !     For now.
@@ -95,9 +94,12 @@
         else
 
 !!         testing              
-          call opcopy(ts1,ts2,ts3,bfx,bfy,bfz)
-          call opcopy(ts4,ts5,ts6,struct_bfdx,struct_bfdy,struct_bfdz)  
-
+!          call opcopy(ts1,ts2,ts3,bfx,bfy,bfz)
+!          call opcopy(ts4,ts5,ts6,struct_bfdx,struct_bfdy,struct_bfdz)
+!          call opcopy(ts4,ts5,ts6,vx,vy,vz)
+         
+!          call outpost(ts1,ts2,ts3,pr,t,'dbg') 
+!          call outpost(ts4,ts5,ts6,pr,t,'dbg')
 
 !          call struct_sethlm
           call struct_cresvif(resv1,resv2,resv3,resx1,resx2,resx3)
@@ -105,8 +107,10 @@
 !          call opcopy(ts1,ts2,ts3,resv1,resv2,resv3)
 !          call opcopy(ts4,ts5,ts6,resx1,resx2,resx3)  
 
+          call solve_elasticity(resv1,resv2,resv3,resx1,resx2,resx3) 
 
-!          call solve_elasticity(resv1,resv2,resv3,resx1,resx2,resx3) 
+          call opcopy(ts1,ts2,ts3,resv1,resv2,resv3)
+          call opcopy(ts4,ts5,ts6,resx1,resx2,resx3)  
 
 !          call struct(igeom)
         endif
@@ -410,7 +414,7 @@ c     Add contributions to F from lagged BD terms.
      $                                vzlag (1,1,1,1,ilag-1),
      $                                bm1                   ,bd(ilag+1))
          endif
-         call opadd2  (tb1,tb2,tb3,ta1,ta2,ta3)
+         call opadd2 (tb1,tb2,tb3,ta1,ta2,ta3)
  101  continue
       call opadd2col (bfx,bfy,bfz,tb1,tb2,tb3,h2)
 
@@ -431,7 +435,7 @@ c     Add contributions to F from lagged BD terms.
      $                                dzlag (1,1,1,1,ilag-1),
      $                                bm1                   ,bd(ilag+1))
          endif
-         call opadd2  (tb1,tb2,tb3,ta1,ta2,ta3)
+         call opadd2 (tb1,tb2,tb3,ta1,ta2,ta3)
  102  continue
       call opadd2col(struct_bfdx,struct_bfdy,struct_bfdz,
      $               tb1,tb2,tb3,h2)
@@ -1040,6 +1044,9 @@ C---------------------------------------------------------------------------
 
       enddo
 
+!     Add negative sign
+      call opcmult(w1,w2,w3,-1.)
+
 !      if (ifdss) call opdssum(w1,w2,w3)
 
       return
@@ -1088,7 +1095,7 @@ c-----------------------------------------------------------------------
       include 'TSTEP'
       include 'STRUCT'
 
-      integer i,j,ipass,miter
+      integer i,j,k,ipass,npass,miter
       real betav,betax,beta,resid0
 
       integer nt
@@ -1116,6 +1123,12 @@ c-----------------------------------------------------------------------
       real resv(lx1*ly1*lz1*lelv,3)       ! initial residuals       
       real resx(lx1*ly1*lz1*lelv,3)       ! initial residuals
 
+      real solv(lx1*ly1*lz1*lelv,3)       ! solution       
+      real solx(lx1*ly1*lz1*lelv,3)       ! solution
+
+      real Axv(lx1*ly1*lz1*lelv,3)       ! intermediate Ax (vel)       
+      real Axx(lx1*ly1*lz1*lelv,3)       ! intermediate Ax (dx)
+     
       real htmp(lx1*ly1*lz1*lelv)
 
       real op_glsc2_wt
@@ -1123,6 +1136,26 @@ c-----------------------------------------------------------------------
       real young,g,nu,lambda
       character*32 outfmt
 
+      real rad,cs,sn          ! Given's rotations
+      real r1(2),r2(2)
+      real rhs(struct_nkryl+1)
+      real lsq_resid(struct_nkryl)      ! residual after each iteration
+      real rel_res
+
+      real tol
+      integer ic,ncycl    ! no of gmres cycles
+      integer ikryl       ! current krylov space size
+
+      logical ifconv
+      real red_soln(struct_nkryl)
+      real red_soln2(struct_nkryl+1)
+     
+      real s
+
+
+!     Taking relative tolerance      
+      tol = 1.0e-4
+      npass = 2
 
 !     move somewhere else      
       young=100.
@@ -1133,120 +1166,125 @@ c-----------------------------------------------------------------------
       g      = .5*young/(1+nu)
 !----------------------------------------     
 
-!     debugging
-!      call opcopy(ts1,ts2,ts3,rv1,rv2,rv3)
-!      call opcopy(ts4,ts5,ts6,rx1,rx2,rx3)
-
 
       nk = struct_nkryl
       call rzero(struct_hessen,nk*(nk+1))
+      call rzero(struct_R,nk*(nk+1))
+      call rzero(struct_GivensC,nk+1)
+      call rzero(struct_GivensS,nk+1)
+      call rzero(rhs,nk+1)
+      call rzero(lsq_resid,nk+1)
 
-      miter = 0
-
-      call opcopy(resv(1,1),resv(1,2),resv(1,3),rv1,rv2,rv3)
-      call opcopy(resx(1,1),resx(1,2),resx(1,3),rx1,rx2,rx3)
+      miter = nk
 
 !     Continuous edges      
       call opdssum(rv1,rv2,rv3)
-      call opcolv(rv1,rv2,rv3,vmult)
-
-      betav  = op_glsc2_wt(rv1,rv2,rv3,rv1,rv2,rv3,bm1)
-      beta   = sqrt(betav)
-      resid0 = beta
-      if (iftran) then
-!       Continuous edges      
-        call opdssum(rx1,rx2,rx3)
-        call opcolv(rx1,rx2,rx3,vmult)
-           
-        betax  = op_glsc2_wt(rx1,rx2,rx3,rx1,rx2,rx3,bm1)
-        beta   = sqrt(betav + betax)
-        resid0 = beta
-
-!       normalize x        
-        call opcmult(rx1,rx2,rx3,1./beta)
-
-!       save x part of first vector        
-        call opcopy(struct_krylx(1,1,1),struct_krylx(1,2,1),
-     $              struct_krylx(1,3,1),rx1,rx2,rx3)
-      endif
-
-!     normalize
-      call opcmult(rv1,rv2,rv3,1./beta)
-
-!     save v part of first vector. This is the x part if its not a
-!     transient simulation 
-      call opcopy(struct_krylv(1,1,1),struct_krylv(1,2,1),
-     $              struct_krylv(1,3,1),rv1,rv2,rv3)
-
+!      call opcolv(rv1,rv2,rv3,vmult)
+      call opdssum(rx1,rx2,rx3)
+!      call opcolv(rx1,rx2,rx3,vmult)
+         
+      call opcopy(resv(1,1),resv(1,2),resv(1,3),rv1,rv2,rv3)
+      call opcopy(resx(1,1),resx(1,2),resx(1,3),rx1,rx2,rx3)
 
       ifmsk = .false. ! ?
-      ifdss = .true.
+      ifdss = .false.
 
       nt = lx1*ly1*lz1*nelv
       call copy(htmp,bm1,nt)
       call cmult(htmp,bd(1)/DT,nt)
 
-      do i=1,miter
-!       Apply elasticity operator      
-        if (iftran) then
-!         Perform Ax            
-!         bd(1)M/DT*v               
-          call opcopy(w4,w5,w6,rv1,rv2,rv3)
-          call opcolv(w4,w5,w6,htmp)
+      ifconv = .false.        ! if converged
+      ncycl  = 50
 
-!         Elasticity operator           
-          call struct_elast(w1,w2,w3,rx1,rx2,rx3,lambda,g,ifmsk,ifdss)
+      do ic=1,ncycl
 
-!         w1+w4,... 
-          call opadd2(w1,w2,w3,w4,w5,w6)
+!       Norm      
+        betav  = op_glsc2_wt(rv1,rv2,rv3,rv1,rv2,rv3,bm1)
+        betax  = op_glsc2_wt(rx1,rx2,rx3,rx1,rx2,rx3,bm1)
 
-!         2nd equation
-          call opcolv3c(w4,w5,w6,rv1,rv2,rv3,bm1,-1.)
-          call opadd2col(w4,w5,w6,rx1,rx2,rx3,htmp)
+        beta   = sqrt(betav + betax)
 
-!         Make continuous            
-          call opdssum(w1,w2,w2)
-          call opcolv(w1,w2,w3,vmult)
-          call opdssum(w4,w5,w6)
-          call opcolv(w4,w5,w6,vmult)
+        if (ic.eq.1) resid0 = beta
 
-          call opcopy(rv1,rv2,rv3,w1,w2,w3)
-          call opcopy(rx1,rx2,rx3,w4,w5,w6)
+        rhs(1) = beta
+!       debugging      
+!        write(6,*) 'initial residual:', resid0
 
-          do ipass=1,1
-          do j=1,i
-          
-            call opdssum(w1,w2,w3)
-            call opcolv(w1,w2,w3,vmult)
+!       normalize
+        call opcmult(rv1,rv2,rv3,1./beta)
+        call opcmult(rx1,rx2,rx3,1./beta)
 
-            call opdssum(w4,w5,w6)
-            call opcolv(w4,w5,w6,vmult)
+!       save v part of first vector.
+        call opcopy(struct_krylv(1,1,1),struct_krylv(1,2,1),
+     $                struct_krylv(1,3,1),rv1,rv2,rv3)
+!       save x part of first vector        
+        call opcopy(struct_krylx(1,1,1),struct_krylx(1,2,1),
+     $              struct_krylx(1,3,1),rx1,rx2,rx3)
 
-            betav = op_glsc2_wt(struct_krylv(1,1,j),
-     $               struct_krylv(1,2,j),struct_krylv(1,3,j),
-     $                w1,w2,w3,bm1)
+        ikryl = 1
+        do i=1,miter
 
-            betax = op_glsc2_wt(struct_krylx(1,1,j),
-     $                struct_krylx(1,2,j),struct_krylx(1,3,j),
-     $                 w4,w5,w6,bm1)
+!         y = Ax
                
-            beta  = betav + betax
-            struct_hessen(j,i) = struct_hessen(j,i)+beta
+!         Apply elasticity operator. Assuming transient simulation 
+!         Perform Ax            
+! !         bd(1)M/DT*v               
+!           call opcopy(w4,w5,w6,rv1,rv2,rv3)
+!           call opcolv(w4,w5,w6,htmp)
+! 
+! !         Elasticity operator           
+!           call struct_elast(w1,w2,w3,rx1,rx2,rx3,lambda,g,ifmsk,ifdss)
+! 
+! !         w1+w4,... 
+!           call opadd2(w1,w2,w3,w4,w5,w6)
+! 
+! !         2nd equation
+!           call opcolv3c(w4,w5,w6,rv1,rv2,rv3,bm1,-1.)
+!           call opadd2col(w4,w5,w6,rx1,rx2,rx3,htmp)
+! 
+! !         Make continuous            
+!           call opdssum(w1,w2,w2)
+! !          call opcolv(w1,w2,w3,vmult)
+!           call opdssum(w4,w5,w6)
+! !          call opcolv(w4,w5,w6,vmult)
+! 
+!           call opcopy(rv1,rv2,rv3,w1,w2,w3)
+!           call opcopy(rx1,rx2,rx3,w4,w5,w6)
 
-            call opadd2cm(rv1,rv2,rv3,struct_krylv(1,1,j),
-     $                 struct_krylv(1,2,j),struct_krylv(1,3,j),-beta)
+          call struct_Ax(rv1,rv2,rv3,rx1,rx2,rx3,htmp)
 
-            call opadd2cm(rx1,rx2,rx3,struct_krylx(1,1,j),
-     $                 struct_krylx(1,2,j),struct_krylx(1,3,j),-beta)
+!         Grahm-Schmidt 
+          do ipass=1,npass
+            call opcopy(w1,w2,w3,rv1,rv2,rv3)
+            call opcopy(w4,w5,w6,rx1,rx2,rx3)
+            do j=1,i
+            
+              betav = op_glsc2_wt(struct_krylv(1,1,j),
+     $                 struct_krylv(1,2,j),struct_krylv(1,3,j),
+     $                  w1,w2,w3,bm1)
 
-!            call opadd2cm(w1,w2,w3,struct_krylv(1,1,j),
-!     $                 struct_krylv(1,2,j),struct_krylv(1,3,j),-beta)
+              betax = op_glsc2_wt(struct_krylx(1,1,j),
+     $                  struct_krylx(1,2,j),struct_krylx(1,3,j),
+     $                   w4,w5,w6,bm1)
+                 
+              beta  = betav + betax
+              struct_hessen(j,i) = struct_hessen(j,i)+beta
+              struct_R(j,i) = struct_R(j,i)+beta
+
+              call opadd2cm(rv1,rv2,rv3,struct_krylv(1,1,j),
+     $                   struct_krylv(1,2,j),struct_krylv(1,3,j),-beta)
+
+              call opadd2cm(rx1,rx2,rx3,struct_krylx(1,1,j),
+     $                   struct_krylx(1,2,j),struct_krylx(1,3,j),-beta)
+
+!              call opadd2cm(w1,w2,w3,struct_krylv(1,1,j),
+!     $                   struct_krylv(1,2,j),struct_krylv(1,3,j),-beta)
 !
-!            call opadd2cm(w4,w5,w6,struct_krylx(1,1,j),
-!     $                 struct_krylx(1,2,j),struct_krylx(1,3,j),-beta)
+!              call opadd2cm(w4,w5,w6,struct_krylx(1,1,j),
+!     $                   struct_krylx(1,2,j),struct_krylx(1,3,j),-beta)
 
 
-          enddo  ! j
+            enddo  ! j
           enddo  ! ipass
 
 !         Residual after projection            
@@ -1254,51 +1292,260 @@ c-----------------------------------------------------------------------
           betax = op_glsc2_wt(rx1,rx2,rx3,rx1,rx2,rx3,bm1)
           
           beta = sqrt(betav + betax)
-          struct_hessen(i+1,i)=beta
+          struct_hessen(i+1,i) = beta
+          struct_R(i+1,i)      = beta
 
-!         debugging
-          write(6,*) 'beta',betav,betax,beta
-
-!         normalize x,v 
-          call opcmult(rx1,rx2,rx3,1./beta)
+!         normalize v,x
           call opcmult(rv1,rv2,rv3,1./beta)
+          call opcmult(rx1,rx2,rx3,1./beta)
 
 !         save v part of the vector        
           call opcopy(struct_krylv(1,1,i+1),struct_krylv(1,2,i+1),
      $                struct_krylv(1,3,i+1),rv1,rv2,rv3)
-
-
 !         save x part of the vector        
           call opcopy(struct_krylx(1,1,i+1),struct_krylx(1,2,i+1),
      $                struct_krylx(1,3,i+1),rx1,rx2,rx3)
 
-        else  
-          call elast(w1,w2,w3,rv1,rv2,rv3,lambda,g,ifmsk,ifdss)
-!         needs more work... 
+!         Increase krylov size            
+          ikryl = ikryl + 1
+
+!         QR decomposition of Hessenberg matrix using Given's rotations
+!         Do previous rotations        
+          do j=1,i-1
+            r1(1) = struct_R(j,i)
+            r1(2) = struct_R(j+1,i)
+
+!           Apply rotation  
+            r2(1) = struct_GivensC(j)*r1(1) + struct_GivensS(j)*r1(2)
+            r2(2) = -struct_GivensS(j)*r1(1) + struct_GivensC(j)*r1(2)
+
+            struct_R(j,i)=r2(1)
+            struct_R(j+1,i)=r2(2)
+          enddo         
+
+!         Rotation for the ith column        
+          r1(1) = struct_R(i,i)
+          r1(2) = struct_R(i+1,i)
+          rad   = sqrt(r1(1)**2 + r1(2)**2)
+          cs    = r1(1)/rad 
+          sn    = r1(2)/rad
+
+          struct_GivensC(i)=cs 
+          struct_GivensS(i)=sn
+
+!         Apply rotations 
+          r2(1) =  struct_GivensC(i)*r1(1) + struct_GivensS(i)*r1(2)
+          r2(2) = -struct_GivensS(i)*r1(1) + struct_GivensC(i)*r1(2)
+
+          struct_R(i,i)=r2(1)
+          struct_R(i+1,i)=r2(2)
+
+!         Rotate rhs
+          r1(1) =  rhs(i)
+          r1(2) =  rhs(i+1)
+          r2(1) =  struct_GivensC(i)*r1(1) + struct_GivensS(i)*r1(2)
+          r2(2) = -struct_GivensS(i)*r1(1) + struct_GivensC(i)*r1(2)
+          rhs(i)   = r2(1)
+          rhs(i+1) = r2(2)
+
+          lsq_resid(i)=rhs(i+1)
+
+          rel_res = abs(rhs(i+1)/resid0)
+
+          if (rel_res.lt.tol) then
+            ifconv = .true.
+            exit ! move out of loop 
+          endif              
+
+        enddo       ! i=1,miter 
+
+!       All below is debugging
+!--------------------------------------------------       
+!!       for writing the hessenberg matrix      
+!        call blank(outfmt,32)
+!        write(outfmt,'(A7,I2,A13)') '(A3,2x,',miter,'(E18.8E2,2x))'
+!
+!!        write(6,*) outfmt
+!
+!        if (nid.eq.0) then
+!          do i=1,miter+1
+!            write(6,outfmt), 'Hes',(struct_hessen(i,j),j=1,miter)
+!          enddo  
+!        endif
+!!       Write out Upper triangular R
+!        if (nid.eq.0) then
+!          do i=1,miter+1
+!            write(6,outfmt), 'QRR',(struct_R(i,j),j=1,miter)
+!          enddo  
+!        endif
+!
+!        call blank(outfmt,32)
+!        write(outfmt,'(A7,I2,A13)') '(A3,2x,',miter+1,'(E18.8E2,2x))'
+!     
+!        write(6,outfmt), 'rhs',(rhs(j),j=1,miter+1)
+!        write(6,outfmt), 'lsq',(lsq_resid(j),j=1,miter+1)
+
+        write(6,*), 'ic,Residual', ic, rel_res
+
+!-------------------------------------------------- 
+
+!       Generate solution
+!       Back substitution
+        do j=ikryl-1,1,-1           ! row
+          s = 0.
+          do k=ikryl-1,j+1,-1       ! column
+            s = s + struct_R(j,k)*red_soln(k)
+          enddo
+          red_soln(j)=(rhs(j)-s)/struct_R(j,j)
+        enddo          
+
+!       debugging           
+!        write(6,outfmt), 'sol',(red_soln(j),j=1,ikryl-1)
+
+!       Recombine Krylov space for solution
+!       soln = Vn+1*yn+1
+        do i=1,ikryl-1
+          call opadd2cm(solv(1,1),solv(1,2),solv(1,3),
+     $                  struct_krylv(1,1,i),
+     $                  struct_krylv(1,2,i),
+     $                  struct_krylv(1,3,i),red_soln(i))
+             
+          call opadd2cm(solx(1,1),solx(1,2),solx(1,3),
+     $                  struct_krylx(1,1,i),
+     $                  struct_krylx(1,2,i),
+     $                  struct_krylx(1,3,i),red_soln(i))
+        enddo      
+
+
+        if (.not.ifconv) then
+!         restart loop
+!              _        
+!         yn+1 = H*yn
+          call mxm(struct_hessen,ikryl,red_soln,ikryl-1,red_soln2,1)
+
+          call opzero(Axv(1,1),Axv(1,2),Axv(1,3))
+          call opzero(Axx(1,1),Axx(1,2),Axx(1,3))
+!         Recombine Krylov vectors        
+!         Ax = Vn+1*yn+1
+          do i=1,ikryl
+            call opadd2cm(Axv(1,1),Axv(1,2),Axv(1,3),
+     $                    struct_krylv(1,1,i),
+     $                    struct_krylv(1,2,i),
+     $                    struct_krylv(1,3,i),red_soln2(i))
+               
+            call opadd2cm(Axx(1,1),Axx(1,2),Axx(1,3),
+     $                    struct_krylx(1,1,i),
+     $                    struct_krylx(1,2,i),
+     $                    struct_krylx(1,3,i),red_soln2(i))
+          enddo
+
+!         Remove part solution
+!         b = (b - Ax)
+          call opsub2(resv(1,1),resv(1,2),resv(1,3),
+     $                Axv(1,1),Axv(1,2),Axv(1,3))          
+          call opsub2(resx(1,1),resx(1,2),resx(1,3),
+     $                Axx(1,1),Axx(1,2),Axx(1,3))          
+
+          call opcopy(rv1,rv2,rv3,resv(1,1),resv(1,2),resv(1,3))
+          call opcopy(rx1,rx2,rx3,resx(1,1),resx(1,2),resx(1,3))
+
+        else
+          exit
         endif
-      enddo       ! i=1,miter 
 
+      enddo       ! ic=1,ncycl 
 
-!     for writing the hessenberg matrix      
-      call blank(outfmt,32)
-      write(outfmt,'(A7,I2,A13)') '(A3,2x,',miter,'(E12.2E2,2x))'
+      call opcopy(rv1,rv2,rv3,solv(1,1),solv(1,2),solv(1,3))
+      call opcopy(rx1,rx2,rx3,solx(1,1),solx(1,2),solx(1,3))
 
-      write(6,*) outfmt
-
-!      if (nid.eq.0) then
-!        do i=1,miter+1
-!          write(6,outfmt), 'Hes',(struct_hessen(i,j),j=1,miter)
-!        enddo  
-!      endif
-
-!      call opcopy(ts1,ts2,ts3,rv1,rv2,rv3)
-!      call opcopy(ts4,ts5,ts6,rx1,rx2,rx3)
 
       return
       end subroutine solve_elasticity            
 
 c------------------------------------------------------------------------
 
+      subroutine struct_ax(rv1,rv2,rv3,rx1,rx2,rx3,h2)
+
+      implicit none
+
+      include 'SIZE'
+      include 'MASS'
+      include 'SOLN'          ! v1mask,... 
+
+      real rv1(lx1*ly1*lz1*lelv)
+      real rv2(lx1*ly1*lz1*lelv)
+      real rv3(lx1*ly1*lz1*lelv)
+
+      real rx1(lx1*ly1*lz1*lelv)
+      real rx2(lx1*ly1*lz1*lelv)
+      real rx3(lx1*ly1*lz1*lelv)
+
+      real w1(lx1*ly1*lz1*lelv)
+      real w2(lx1*ly1*lz1*lelv)
+      real w3(lx1*ly1*lz1*lelv)
+
+      real w4(lx1*ly1*lz1*lelv)
+      real w5(lx1*ly1*lz1*lelv)
+      real w6(lx1*ly1*lz1*lelv)
+
+      real h2(lx1*ly1*lz1*lelv)
+
+      integer seqn
+      logical ifdss,ifmsk
+
+      real young,g,nu,lambda
+
+!     move somewhere else      
+      young=100.
+      nu=0.3
+
+      lambda = young*nu/( (1+nu)*(1-2*nu) ) ! for 3D, and 2D plane strain
+
+      g      = .5*young/(1+nu)
+!----------------------------------------     
+
+      ifdss = .false.
+      ifmsk = .false.
+
+!     y = Ax
+           
+!     Apply elasticity operator. Assuming transient simulation 
+!     Perform Ax            
+!     bd(1)M/DT*v               
+      call opcopy(w4,w5,w6,rv1,rv2,rv3)
+      call opcolv(w4,w5,w6,h2)
+
+!     Elasticity operator           
+      call struct_elast(w1,w2,w3,rx1,rx2,rx3,lambda,g,ifmsk,ifdss)
+
+!     w1+w4,... 
+      call opadd2(w1,w2,w3,w4,w5,w6)
+
+!     2nd equation
+      call opcolv3c(w4,w5,w6,rv1,rv2,rv3,bm1,-1.)
+      call opadd2col(w4,w5,w6,rx1,rx2,rx3,h2)
+
+!     Make continuous            
+      call opdssum(w1,w2,w2)
+!      call opcolv(w1,w2,w3,vmult)
+      call opdssum(w4,w5,w6)
+!      call opcolv(w4,w5,w6,vmult)
+
+      call opcopy(rv1,rv2,rv3,w1,w2,w3)
+      call opcopy(rx1,rx2,rx3,w4,w5,w6)
+
+!     If we solve for corrections then we only need to apply masks for 
+!     Dirichlet conditions. Since the correction is always zero      
+
+!     Apply dirichlet boundary conditions 
+      seqn = 1
+      call struct_bcdirvc(rv1,rv2,rv3,v1mask,v2mask,v3mask,seqn)
+      seqn = 2
+      call struct_bcdirvc(rx1,rx2,rx3,v1mask,v2mask,v3mask,seqn)
 
 
 
+      return
+      end subroutine struct_ax
+
+!---------------------------------------------------------------------- 

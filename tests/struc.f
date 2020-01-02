@@ -61,7 +61,7 @@ c -----------------------------------------------------------------------
       ran = 6.e3*sin(ran)
       ran = 3.e3*sin(ran)
       ran = cos(ran)
-      ux = 1. + ran*amp
+      ux = 0. + ran*amp
       
       ran = (2+ran)*1.e4*(ieg+Y*sin(Z)+X*cos(Z))
      $     + 1.5e3*ix*iy*iz - 2.5e3*ix*iy + 8.9e4*ix
@@ -149,20 +149,20 @@ c-----------------------------------------------------------------------
       call opzero(ts4,ts5,ts6)
 !      call oprone(dispx,dispy,dispz)
 
-      if (istep.eq.1) then
+      if (istep.gt.0) then
+
         call plan_s
 
         call outpost(ts1,ts2,ts3,pr,t,'dbg')
         call outpost(ts4,ts5,ts6,pr,t,'dbg')
 
-        do i=1,struct_nkryl
-          call outpost(struct_krylv(1,1,i),struct_krylv(1,2,i),
-     $            struct_krylv(1,3,i),pr,t,'slv')
-          call outpost(struct_krylx(1,1,i),struct_krylx(1,2,i),
-     $            struct_krylx(1,3,i),pr,t,'slx')
-        enddo
+!        do i=1,struct_nkryl
+!          call outpost(struct_krylv(1,1,i),struct_krylv(1,2,i),
+!     $            struct_krylv(1,3,i),pr,t,'slv')
+!          call outpost(struct_krylx(1,1,i),struct_krylx(1,2,i),
+!     $            struct_krylx(1,3,i),pr,t,'slx')
+!        enddo
 
-        call exitt
       endif        
       
       return
