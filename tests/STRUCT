@@ -5,6 +5,11 @@
 
       common /struct_sl/ fsi_ifstruct,fsi_iffluid
 
+
+      real newm_beta,newm_gamma
+      parameter (newm_beta  = 0.25)
+      parameter (newm_gamma = 0.5)
+
 !     Structural parameters
 
       real struct_lambda
@@ -13,59 +18,31 @@
 
       common /struct_params/ struct_lambda,struct_nu,struct_young
 
-!     operator h1/h2 for structural equations 
-      real e1hv1(lx1,ly1,lz1,lelv)
-      real e1hv2(lx1,ly1,lz1,lelv)
-      real e1hx1(lx1,ly1,lz1,lelv)
-      real e1hx2(lx1,ly1,lz1,lelv)
-
-!     2nd eqn      
-      real e2hv1(lx1,ly1,lz1,lelv)
-      real e2hv2(lx1,ly1,lz1,lelv)
-      real e2hx1(lx1,ly1,lz1,lelv)
-      real e2hx2(lx1,ly1,lz1,lelv)
-
-
 !     Fields
-      real dispx(lx1,ly1,lz1,lelv)
-      real dispy(lx1,ly1,lz1,lelv)
-      real dispz(lx1,ly1,lz1,lelv)
+!     Using vx,vy,vz as displacement fields
+!     and vxlag,vylag,vzlag as lag fields      
 
-!     lag arrays for displacement      
-      real dxlag(lx1,ly1,lz1,lelv,2)
-      real dylag(lx1,ly1,lz1,lelv,2)
-      real dzlag(lx1,ly1,lz1,lelv,2)
+!     velocities      
+      real velx(lx1,ly1,lz1,lelv)
+      real vely(lx1,ly1,lz1,lelv)
+      real velz(lx1,ly1,lz1,lelv)
 
-!     Using the original bfx,bfy,bfz arrays for
-!     forcing for the main structural equation
-!      real struct_bfvx(lx1,ly1,lz1,lelv)
-!      real struct_bfvy(lx1,ly1,lz1,lelv)
-!      real struct_bfvz(lx1,ly1,lz1,lelv)
+      real velxlag(lx1,ly1,lz1,lelv)
+      real velylag(lx1,ly1,lz1,lelv)
+      real velzlag(lx1,ly1,lz1,lelv)
 
-!     Forcing field for the displacement equation
-      real struct_bfdx(lx1,ly1,lz1,lelv)
-      real struct_bfdy(lx1,ly1,lz1,lelv)
-      real struct_bfdz(lx1,ly1,lz1,lelv)
+!     accelerations      
+      real accx(lx1,ly1,lz1,lelv)
+      real accy(lx1,ly1,lz1,lelv)
+      real accz(lx1,ly1,lz1,lelv)
 
-      common /struct_disp/ dispx,dispy,dispz,
-     $                     dxlag,dylag,dzlag,
-     $                     struct_bfdx,struct_bfdy,struct_bfdz 
+      real accxlag(lx1,ly1,lz1,lelv)
+      real accylag(lx1,ly1,lz1,lelv)
+      real acczlag(lx1,ly1,lz1,lelv)
 
-!     Lag arrays for forcing field for 
-!     2nd equation
-      real struct_abx1(lx1,ly1,lz1,lelv)
-      real struct_abx2(lx1,ly1,lz1,lelv)
 
-      real struct_aby1(lx1,ly1,lz1,lelv)
-      real struct_aby2(lx1,ly1,lz1,lelv)
-
-      real struct_abz1(lx1,ly1,lz1,lelv)
-      real struct_abz2(lx1,ly1,lz1,lelv)
-
-      common /struct_lag/ struct_abx1,struct_abx2,
-     $                    struct_aby1,struct_aby2,
-     $                    struct_abz1,struct_abz2
-
+      common /struct_vel/ velx,vely,velz
+      common /struct_acc/ accx,accy,accz
 
 !     Krylov field
       integer struct_nkryl
