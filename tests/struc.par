@@ -5,15 +5,15 @@
 #startFrom = 
 stopAt = numSteps #endTime
 #endTime = 1.0
-numSteps =2
+numSteps =100
 
 dt = 1e-03
 timeStepper = bdf2 #char #steady
 variableDt = no 
-targetCFL = 0.5
+targetCFL = 50.
 
 writeControl = timeStep #runTime
-writeInterval = 100
+writeInterval = 1
 
 userParam01 = 200    # start time collecting statistics
 userParam02 = 20     # writeInterval 1D statistics

@@ -148,13 +148,15 @@ c-----------------------------------------------------------------------
       call opzero(ts1,ts2,ts3)
       call opzero(ts4,ts5,ts6)
 !      call oprone(dispx,dispy,dispz)
+      call opzero(velx,vely,velz)
+
 
       if (istep.gt.0) then
 
         call plan_s
 
         call outpost(ts1,ts2,ts3,pr,t,'dbg')
-        call outpost(ts4,ts5,ts6,pr,t,'dbg')
+!        call outpost(ts4,ts5,ts6,pr,t,'dbg')
 
 !        do i=1,struct_nkryl
 !          call outpost(struct_krylv(1,1,i),struct_krylv(1,2,i),
