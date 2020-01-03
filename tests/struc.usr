@@ -132,6 +132,7 @@ c-----------------------------------------------------------------------
       include 'TSTEP'
       include 'SOLN'
       include 'STRUCT'
+      include 'MASS'
 
       integer ltmp
       parameter (ltmp=100)
@@ -145,6 +146,11 @@ c-----------------------------------------------------------------------
 
       integer i
 
+      real h2(lx1*ly1*lz1*lelv)
+      real const
+      logical ifmsk,ifdss
+      integer nt
+
       call opzero(ts1,ts2,ts3)
       call opzero(ts4,ts5,ts6)
 !      call oprone(dispx,dispy,dispz)
@@ -155,8 +161,8 @@ c-----------------------------------------------------------------------
 
         call plan_s
 
-        call outpost(ts1,ts2,ts3,pr,t,'dbg')
-!        call outpost(ts4,ts5,ts6,pr,t,'dbg')
+!        call outpost(ts1,ts2,ts3,pr,t,'dbg')
+!        call outpost(ts4,ts5,ts6,pr,t,'db2')
 
 !        do i=1,struct_nkryl
 !          call outpost(struct_krylv(1,1,i),struct_krylv(1,2,i),
@@ -164,6 +170,35 @@ c-----------------------------------------------------------------------
 !          call outpost(struct_krylx(1,1,i),struct_krylx(1,2,i),
 !     $            struct_krylx(1,3,i),pr,t,'slx')
 !        enddo
+
+
+         ifto = .true.                         
+!        rhs        
+!         call outpost(ts4,ts5,ts6,pr,t,'dbg')
+
+         ifield = 1
+         call opcopy(ts4,ts5,ts6,ts1,ts2,ts3) 
+         nt = lx1*ly1*lz1*nelv
+         const = 2/(DT**2)
+         call cmult2(h2,vtrans(1,1,1,1,ifield),const,nt)
+         call col2(h2,bm1,nt)
+
+         ifmsk = .false.
+         ifdss = .false. ! dssum done at the beginning 
+                         ! of the solve routine
+         call struct_Ax(ts1,ts2,ts3,h2,ifdss,ifmsk)
+         call opdssum(ts1,ts2,ts3)
+         call opcol2(ts1,ts2,ts3,v1mask,v2mask,v3mask)   
+
+!        solution
+!         call outpost(ts4,ts5,ts6,pr,h2,'dbg')
+
+!        Ax         
+!         call outpost(ts1,ts2,ts3,pr,vtrans,'dbg')
+
+         if (mod(istep,iostep).eq.0) then
+           call outpost(velx,vely,velz,pr,t,'vel')
+         endif
 
       endif        
       
