@@ -117,12 +117,10 @@
 !          call opcopy(vx,vy,vz,resv1,resv2,resv3)
           call opadd2(vx,vy,vz,resv1,resv2,resv3)
          
-!         Update velocities         
-!          call opsub2(resv1,resv2,resv3,resx1,resx2,resx3)
-          call opcmult(resv1,resv2,resv3,2./DT)
-          call opsub2(resv1,resv2,resv3,velx,vely,velz)
-
-!         New displacements  
+!         Update velocities
+          call opcopy(resv1,resv2,resv3,vx,vy,vz)
+          call opsub2(resv1,resv2,resv3,resx1,resx2,resx3)
+          call opcmult(resv1,resv2,resv3,0.5/DT)
           call opcopy(velx,vely,velz,resv1,resv2,resv3)
 
 !          call opcopy(ts1,ts2,ts3,velx,vely,velz)
@@ -1363,7 +1361,7 @@ c------------------------------------------------------------------------
            
 !     Apply elasticity operator. Assuming transient simulation 
 !     Perform Ax            
-!     2*M/(DT**2)*x 
+!     M/(DT**2)*x 
       call opcopy(w1,w2,w3,rv1,rv2,rv3)
       call opcolv(w1,w2,w3,h2)
 !      call opzero(w1,w2,w3)
@@ -1371,8 +1369,7 @@ c------------------------------------------------------------------------
 !     Elasticity operator           
       call struct_elast(w4,w5,w6,rv1,rv2,rv3,lambda,g,ifmsk,ifdss)
 
-!!     does elast multiply by mass matrix? 
-!      call opcolv(w4,w5,w6,bm1)
+!!     Mass matrix already included? 
 
 !     w1+0.5*w4,... 
       call opadd2cm(w1,w2,w3,w4,w5,w6,0.5)
