@@ -154,8 +154,10 @@ c-----------------------------------------------------------------------
       call opzero(ts1,ts2,ts3)
       call opzero(ts4,ts5,ts6)
 !      call oprone(dispx,dispy,dispz)
-      call opzero(velx,vely,velz)
-
+      if (istep.eq.0) then
+        call opzero(velx,vely,velz)
+        call opzero(vxlag,vylag,vzlag)
+      endif        
 
       if (istep.gt.0) then
 
@@ -178,10 +180,7 @@ c-----------------------------------------------------------------------
 
          ifield = 1
          call opcopy(ts4,ts5,ts6,ts1,ts2,ts3) 
-         nt = lx1*ly1*lz1*nelv
-         const = 2/(DT**2)
-         call cmult2(h2,vtrans(1,1,1,1,ifield),const,nt)
-         call col2(h2,bm1,nt)
+         call struct_seth2(h2)
 
          ifmsk = .false.
          ifdss = .false. ! dssum done at the beginning 
