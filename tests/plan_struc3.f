@@ -318,15 +318,15 @@ C
 
       call opadd2 (bfx,bfy,bfz,ta1,ta2,ta3)
 
-!     Damping terms here. For now set to zero
-      damp_const = 0.
-      const = 1.*damp_const
-      call copy(h2,bm1,nt)
-      call cmult(h2,const,nt)
-
-      call opcolv3(ta1,ta2,ta3,velx,vely,velz,h2)
-
-      call opadd2 (bfx,bfy,bfz,ta1,ta2,ta3)
+!!     Damping terms here. For now set to zero
+!      damp_const = 0.
+!      const = 1.*damp_const
+!      call copy(h2,bm1,nt)
+!      call cmult(h2,const,nt)
+!
+!      call opcolv3(ta1,ta2,ta3,velx,vely,velz,h2)
+!
+!      call opadd2 (bfx,bfy,bfz,ta1,ta2,ta3)
 
       return
       end subroutine make_velf
@@ -368,15 +368,15 @@ C
 
       call opadd2 (bfx,bfy,bfz,ta1,ta2,ta3)
 
-!     Damping terms here. For now set to zero
-      damp_const = 0.
-      const = (2./DT)*damp_const
-      call copy(h2,bm1,nt)
-      call cmult(h2,const,nt)
-
-      call opcolv3(ta1,ta2,ta3,vx,vy,vz,h2)
-
-      call opadd2 (bfx,bfy,bfz,ta1,ta2,ta3)
+!!     Damping terms here. For now set to zero
+!      damp_const = 0.
+!      const = (2./DT)*damp_const
+!      call copy(h2,bm1,nt)
+!      call cmult(h2,const,nt)
+!
+!      call opcolv3(ta1,ta2,ta3,vx,vy,vz,h2)
+!
+!      call opadd2 (bfx,bfy,bfz,ta1,ta2,ta3)
 
       return
       end subroutine make_dxf
@@ -588,7 +588,7 @@ c-----------------------------------------------------------------------
 
 !     traction forces on the structure
       if (istep.eq.1) then
-        amp = 1.0e-05
+        amp = 1.0e-00
       else
         amp = 0.
       endif 
@@ -1069,7 +1069,7 @@ c-----------------------------------------------------------------------
       call rzero(lsq_resid,nk+1)
 
       miter  = nk 
-      ncycl  = 100
+      ncycl  = 500
 
 !     Continuous edges      
       call opdssum(rv1,rv2,rv3)
@@ -1348,7 +1348,7 @@ c------------------------------------------------------------------------
       integer nt,ifld
 
 !     move somewhere else      
-      young=100.
+      young=10.
       nu=0.3
 
       lambda = young*nu/( (1+nu)*(1-2*nu) ) ! for 3D, and 2D plane strain
@@ -1439,9 +1439,9 @@ c------------------------------------------------------------------------
 
 !     Un+1 - Un
       call opcopy(resv1,resv2,resv3,vx,vy,vz)
-      call sub2(resv1,resv2,resv3,vxlag,vylag,vzlag)
+      call opsub2(resv1,resv2,resv3,vxlag,vylag,vzlag)
 
-!     New Acceleration            
+!     New Acceleration 
 !     An+1 = -[An - (4/DT^2)*(Un+1 - Un) + 4/DT*Vn]
       const = 4./DT
       call opadd2cm(accx,accy,accz,velx,vely,velz,const)
