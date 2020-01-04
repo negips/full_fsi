@@ -210,7 +210,7 @@ c-----------------------------------------------------------------------
 
         call plan_s
 
-        call outpost(ts1,ts2,ts3,pr,t,'inc')
+        call outpost(ts1,bm1,ts3,pr,t,'inc')
 !        call outpost(ts4,ts5,ts6,pr,t,'db2')
 
 !        do i=1,struct_nkryl
@@ -227,14 +227,13 @@ c-----------------------------------------------------------------------
 
          ifield = 1
          call opcopy(ts4,ts5,ts6,ts1,ts2,ts3) 
-         call struct_seth2(h2)
 
          ifmsk = .false.
          ifdss = .false. ! dssum done at the beginning 
                          ! of the solve routine
-         call struct_Ax(ts1,ts2,ts3,h2,ifdss,ifmsk)
-         call opdssum(ts1,ts2,ts3)
-         call opcol2(ts1,ts2,ts3,v1mask,v2mask,v3mask)   
+!         call struct_Ax(ts1,ts2,ts3,h2,ifdss,ifmsk)
+!         call opdssum(ts1,ts2,ts3)
+!         call opcol2(ts1,ts2,ts3,v1mask,v2mask,v3mask)   
 
 !        solution
 !         call outpost(ts4,ts5,ts6,pr,h2,'dbg')
@@ -244,6 +243,9 @@ c-----------------------------------------------------------------------
 
          if (mod(istep,iostep).eq.0) then
            call outpost(velx,vely,velz,pr,t,'vel')
+           call outpost(accx,accy,accz,pr,t,'acc')
+          
+           call outpost(vxlag,vylag,vzlag,pr,t,'lag')
          endif
 
       endif        

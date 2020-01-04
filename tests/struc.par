@@ -5,9 +5,9 @@
 #startFrom = 
 stopAt = numSteps #endTime
 #endTime = 1.0
-numSteps =5
+numSteps =20
 
-dt = 1e-02
+dt = 1e-04
 timeStepper = bdf2 #char #steady
 variableDt = no 
 targetCFL = 50.
@@ -33,9 +33,9 @@ preconditioner = semg_xxt
 residualTol = 1e-6
 #residualProj = yes
 
-[MESH]
-motion = ELASTICITY
-residualTol = 1e-6
+#[MESH]
+#motion = ELASTICITY
+#residualTol = 1e-6
 #residualProj = yes
 
 [VELOCITY]

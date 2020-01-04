@@ -27,18 +27,10 @@
       real vely(lx1,ly1,lz1,lelv)
       real velz(lx1,ly1,lz1,lelv)
 
-!      real velxlag(lx1,ly1,lz1,lelv)
-!      real velylag(lx1,ly1,lz1,lelv)
-!      real velzlag(lx1,ly1,lz1,lelv)
-
 !     accelerations      
       real accx(lx1,ly1,lz1,lelv)
       real accy(lx1,ly1,lz1,lelv)
       real accz(lx1,ly1,lz1,lelv)
-
-      real accxlag(lx1,ly1,lz1,lelv)
-      real accylag(lx1,ly1,lz1,lelv)
-      real acczlag(lx1,ly1,lz1,lelv)
 
       real dampc(lx1,ly1,lz1,lelv)        ! Damping coefficient
                                           ! Analogue of vtrans

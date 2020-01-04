@@ -84,6 +84,7 @@
 !     For now.
       ifgeom = .false.
       ifield = 1
+      ngeom  = 2
 
 !     First Structural solve
       call opzero(resv1,resv2,resv3)
@@ -95,23 +96,13 @@
           call struct_makef
         else
 
-!!         testing              
-!          call opcopy(ts1,ts2,ts3,bfx,bfy,bfz)
-!          call opcopy(ts4,ts5,ts6,vx,vy,vz)
-         
-!          call outpost(ts1,ts2,ts3,pr,t,'dbg') 
-!          call outpost(ts4,ts5,ts6,pr,t,'dbg')
-
 !         initial residual for correction 
           call struct_cresvif(resv1,resv2,resv3)
 
 !         Solve for increment          
           call solve_elasticity(resv1,resv2,resv3)
 
-!         debugging            
-          call opcopy(ts1,ts2,ts3,resv1,resv2,resv3)
-
-          call update_fields(resv1,resv2,resv3) 
+          call update_fields(resv1,resv2,resv3)
 
 !!         New displacements          
 !!          call opcopy(vx,vy,vz,resv1,resv2,resv3)
@@ -379,7 +370,7 @@ C
 
 !     Damping terms here. For now set to zero
       damp_const = 0.
-      const = 2./DT*damp_const
+      const = (2./DT)*damp_const
       call copy(h2,bm1,nt)
       call cmult(h2,const,nt)
 
@@ -586,6 +577,7 @@ c-----------------------------------------------------------------------
        
       include 'SIZE'
       include 'NEKUSE'          ! UX, UY, UZ, TEMP, X, Y, PA
+      include 'TSTEP'
 
       integer ix,iy,iz,iside,ieg
       real amp
@@ -595,7 +587,11 @@ c-----------------------------------------------------------------------
       uz = 0.
 
 !     traction forces on the structure
-      amp = 1.0e-2
+      if (istep.eq.1) then
+        amp = 1.0e-05
+      else
+        amp = 0.
+      endif 
       trx = amp*exp(-((y-0.8)/0.025)**2 - ((x-3.0)/0.1)**2) !*cos(x)
       try = 0.
       trz = 0.
@@ -649,6 +645,11 @@ C
 
 !       debugging 
 !        call opcopy(ts4,ts5,ts6,resv1,resv2,resv3)
+
+
+!       if not solving for increment    
+!        call opcopy(resv1,resv2,resv3,bfx,bfy,bfz)
+
 
       endif
 
@@ -1080,7 +1081,7 @@ c-----------------------------------------------------------------------
 !     Use this for inner products
       nt=nx1*ny1*nz1*nelv 
       call copy(bmm,bm1,nt)
-      call col2(bmm,vmult,nt)
+!      call col2(bmm,vmult,nt)
 
       ifconv = .false.        ! if converged
 
@@ -1383,71 +1384,26 @@ c------------------------------------------------------------------------
 !     Elasticity operator           
       call struct_elast(w4,w5,w6,rv1,rv2,rv3,lambda,g,ifdss1,ifmsk1)
 
+!     BM1?
+!      call opcolv(w4,w5,w6,bm1)
+
 !     w1+w4,... 
       call opadd2(w1,w2,w3,w4,w5,w6)
 
       call opcopy(rv1,rv2,rv3,w1,w2,w3)
 
+!     if we don't solve for increment      
+!      call struct_bcdirvc(rv1,rv2,rv3,v1mask,v2mask,v3mask)
+
 !!     Make continuous
-      if (ifdss) call opdssum(rv1,rv2,rv3)
       if (ifmsk) call opcol2(rv1,rv2,rv3,v1mask,v2mask,v3mask)
+      if (ifdss) call opdssum(rv1,rv2,rv3)
 
       return
       end subroutine struct_Ax
 
 !---------------------------------------------------------------------- 
 
-
-      subroutine struct_seth2(h2)
-
-      implicit none
-
-      include 'SIZE'
-      include 'TSTEP'   ! DT
-      include 'MASS'    ! bm1
-      include 'SOLN'    ! vtrans
-
-      real h2(lx1*ly1*lz1*lelv)
-      integer nt
-      real const
-
-      nt = lx1*ly1*lz1*nelv
-      const = 1./(DT**2)
-      call cmult2(h2,vtrans(1,1,1,1,1),const,nt)
-      call col2(h2,bm1,nt)
-
-      return
-      end subroutine struct_seth2
-!---------------------------------------------------------------------- 
-
-      subroutine struct_lagdisp
-
-!     Keep old velocity field(s)
-
-      implicit none            
-
-      include 'SIZE'
-      include 'INPUT'
-      include 'SOLN'
-      include 'TSTEP'
-
-      integer nt,ilag
-
-      nt = lx1*ly1*lz1*nelv
-
-      do 100 ilag=3-1,2,-1
-         call copy (vxlag (1,1,1,1,ilag),vxlag (1,1,1,1,ilag-1),nt)
-         call copy (vylag (1,1,1,1,ilag),vylag (1,1,1,1,ilag-1),nt)
-         if (ldim.eq.3)
-     $   call copy (vzlag (1,1,1,1,ilag),vzlag (1,1,1,1,ilag-1),nt)
- 100  continue
-c
-      call opcopy (vxlag,vylag,vzlag,vx,vy,vz)
-c
-      return
-      end
-
-!---------------------------------------------------------------------- 
 
       subroutine update_fields(delx,dely,delz)
 
@@ -1470,10 +1426,16 @@ c
       real delx(1),dely(2),delz(3)
 
       real const
+      logical ifupd       ! if we have solved for update
 
+      ifupd=.true.
 
-!     New displacements          
-      call opadd2(vx,vy,vz,delx,dely,delz)
+!     New displacements
+      if (ifupd) then      
+        call opadd2(vx,vy,vz,delx,dely,delz)
+      else
+        call opcopy(vx,vy,vz,delx,dely,delz)
+      endif        
 
 !     Un+1 - Un
       call opcopy(resv1,resv2,resv3,vx,vy,vz)
