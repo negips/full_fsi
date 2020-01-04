@@ -27,9 +27,9 @@
       real vely(lx1,ly1,lz1,lelv)
       real velz(lx1,ly1,lz1,lelv)
 
-      real velxlag(lx1,ly1,lz1,lelv)
-      real velylag(lx1,ly1,lz1,lelv)
-      real velzlag(lx1,ly1,lz1,lelv)
+!      real velxlag(lx1,ly1,lz1,lelv)
+!      real velylag(lx1,ly1,lz1,lelv)
+!      real velzlag(lx1,ly1,lz1,lelv)
 
 !     accelerations      
       real accx(lx1,ly1,lz1,lelv)
@@ -40,18 +40,22 @@
       real accylag(lx1,ly1,lz1,lelv)
       real acczlag(lx1,ly1,lz1,lelv)
 
+      real dampc(lx1,ly1,lz1,lelv)        ! Damping coefficient
+                                          ! Analogue of vtrans
 
       common /struct_vel/ velx,vely,velz
       common /struct_acc/ accx,accy,accz
+
+      common /struct_flds/ dampc
 
 !     Krylov field
       integer struct_nkryl
       parameter (struct_nkryl=40)
       real struct_krylv(lx1*ly1*lz1*lelv,ldim,struct_nkryl+1)
       real struct_krylx(lx1*ly1*lz1*lelv,ldim,struct_nkryl+1)
-      real struct_hessen(struct_nkryl,struct_nkryl+1)
+      real struct_hessen(struct_nkryl+1,struct_nkryl)
       real struct_Q(struct_nkryl+1,struct_nkryl+1)
-      real struct_R(struct_nkryl,struct_nkryl+1)
+      real struct_R(struct_nkryl+1,struct_nkryl)
       real struct_GivensC(struct_nkryl+1)
       real struct_GivensS(struct_nkryl+1)
 

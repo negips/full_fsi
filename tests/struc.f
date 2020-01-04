@@ -133,6 +133,7 @@ c-----------------------------------------------------------------------
       include 'SOLN'
       include 'STRUCT'
       include 'MASS'
+      include 'NEKNEK'        ! igeom
 
       integer ltmp
       parameter (ltmp=100)
@@ -146,10 +147,20 @@ c-----------------------------------------------------------------------
 
       integer i
 
-      real h2(lx1*ly1*lz1*lelv)
       real const
       logical ifmsk,ifdss
       integer nt
+
+      real            resv1 (lx1,ly1,lz1,lelv)
+     $ ,              resv2 (lx1,ly1,lz1,lelv)
+     $ ,              resv3 (lx1,ly1,lz1,lelv)
+     $ ,              resx1 (lx1,ly1,lz1,lelv)
+     $ ,              resx2 (lx1,ly1,lz1,lelv)
+     $ ,              resx3 (lx1,ly1,lz1,lelv)
+     $ ,              h2    (lx1,ly1,lz1,lelv)
+
+      logical iftest
+
 
       call opzero(ts1,ts2,ts3)
       call opzero(ts4,ts5,ts6)
@@ -157,13 +168,49 @@ c-----------------------------------------------------------------------
       if (istep.eq.0) then
         call opzero(velx,vely,velz)
         call opzero(vxlag,vylag,vzlag)
+        call opzero(accx,accy,accz)
+        call opzero(bfx,bfy,bfz)
+      endif
+
+      iftest = .false.
+!     testing
+      if (iftest) then
+        igeom=2
+!        call struct_cresvif(resv1,resv2,resv3)
+
+        call struct_bcdirvc(vx,vy,vz,v1mask,v2mask,v3mask)
+        call struct_bcneutr       ! add traction to rhs
+
+!       rhs 
+        call outpost(bfx,bfy,bfz,pr,t,'dbg')
+
+        call opcopy(resv1,resv2,resv3,bfx,bfy,bfz)
+
+        call solve_elasticity(resv1,resv2,resv3)
+
+        call update_fields(resv1,resv2,resv3)
+
+!       solutions            
+        call outpost(vx,vy,vz,pr,t,'dbg')
+        call outpost(velx,vely,velz,pr,t,'dbg')
+        call outpost(accx,accy,accz,pr,t,'dbg')
+
+        ifdss = .true.
+        ifmsk = .true.
+        call struct_Ax(resv1,resv2,resv3,ifdss,ifmsk)
+
+!       Ax            
+        call outpost(resv1,resv2,resv3,pr,t,'dbg')
+
+        call exitt
       endif        
+
 
       if (istep.gt.0) then
 
         call plan_s
 
-!        call outpost(ts1,ts2,ts3,pr,t,'dbg')
+        call outpost(ts1,ts2,ts3,pr,t,'inc')
 !        call outpost(ts4,ts5,ts6,pr,t,'db2')
 
 !        do i=1,struct_nkryl
