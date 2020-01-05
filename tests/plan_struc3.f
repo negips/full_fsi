@@ -101,9 +101,6 @@
           call struct_makef
         else
 
-!         debugging                
-          call opcopy(ts1,ts2,ts3,bfx,bfy,bfz)
-
 !         initial residual for correction 
           call struct_cresvif(resv1,resv2,resv3)
 
@@ -219,7 +216,7 @@ C
       integer ix,iy,iz,ieg
       real amp
 
-      amp = 1.0e+4
+      amp = 0.0e+0
       ffx = amp*exp(-((y-0.065)/0.01)**2 - ((x-0.005)/0.001)**2) !*cos(x)
 
 !      ffx = 0.
@@ -570,12 +567,12 @@ c-----------------------------------------------------------------------
       uz = 0.
 
 !     traction forces on the structure
-      if (istep.eq.1) then
-        amp =00.0e-00
+      if (istep.gt.0) then
+        amp =1.0e-00
       else
         amp = 0.
       endif
-      trx = amp*exp(-((y-0.65)/0.025)**2 - ((x-3.0)/0.1)**2) !*cos(x)
+      trx = amp*exp(-((y-0.1)/0.01)**2 - ((x-0.005)/0.01)**2) !*cos(x)
       try = 0.
       trz = 0.
       
@@ -613,6 +610,10 @@ C
 
         call struct_bcdirvc(vx,vy,vz,v1mask,v2mask,v3mask)
         call struct_bcneutr       ! add traction to rhs 
+
+!       debugging
+        call opcopy(ts1,ts2,ts3,bfx,bfy,bfz)
+
 
         call opcopy(resv1,resv2,resv3,vx,vy,vz)
 
@@ -1060,7 +1061,7 @@ c-----------------------------------------------------------------------
 !     Use this for inner products
       nt=nx1*ny1*nz1*nelv 
       call copy(bmm,bm1,nt)
-!      call col2(bmm,vmult,nt)
+      call col2(bmm,vmult,nt)
 
 
 !     initialize solution      
@@ -1331,7 +1332,7 @@ c------------------------------------------------------------------------
       integer nt,ifld
 
 !     move somewhere else      
-      young=10.
+      young=100.
       nu=0.3
 
       lambda = young*nu/( (1+nu)*(1-2*nu) ) ! for 3D, and 2D plane strain

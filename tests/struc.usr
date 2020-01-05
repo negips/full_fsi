@@ -231,7 +231,7 @@ c-----------------------------------------------------------------------
 !         call outpost(ts4,ts5,ts6,pr,t,'dbg')
 
          ifield = 1
-         call opcopy(ts4,ts5,ts6,ts1,ts2,ts3) 
+!         call opcopy(ts4,ts5,ts6,ts1,ts2,ts3) 
 
          ifmsk = .false.
          ifdss = .false. ! dssum done at the beginning 
@@ -245,6 +245,8 @@ c-----------------------------------------------------------------------
 
 !        Ax         
 !         call outpost(ts1,ts2,ts3,pr,vtrans,'dbg')
+
+         if (istep.eq.1) call outpost(ts1,ts2,ts3,pr,t,'dbg')
 
          if (mod(istep,iostep).eq.0) then
            call outpost(velx,vely,velz,pr,t,'vel')

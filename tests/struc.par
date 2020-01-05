@@ -5,7 +5,7 @@
 #startFrom = 
 stopAt = numSteps #endTime
 #endTime = 1.0
-numSteps =5000
+numSteps =10000
 
 dt = 1e-05
 timeStepper = bdf2 #char #steady
