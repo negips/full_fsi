@@ -568,7 +568,7 @@ c-----------------------------------------------------------------------
 
 !     traction forces on the structure
       if (istep.gt.0) then
-        amp =1.0e-00
+        amp =1.0e-02
       else
         amp = 0.
       endif

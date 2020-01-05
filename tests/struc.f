@@ -134,6 +134,7 @@ c-----------------------------------------------------------------------
       include 'STRUCT'
       include 'MASS'
       include 'NEKNEK'        ! igeom
+      include 'GEOM'
 
       integer ltmp
       parameter (ltmp=100)
@@ -161,6 +162,10 @@ c-----------------------------------------------------------------------
      $ ,              h2    (lx1,ly1,lz1,lelv)
 
       logical iftest
+
+      real tmpx(lx1,ly1,lz1,lelv)
+      real tmpy(lx1,ly1,lz1,lelv)
+      real tmpz(lx1,ly1,lz1,lelv)
 
 
       call opzero(ts1,ts2,ts3)
@@ -249,6 +254,13 @@ c-----------------------------------------------------------------------
          if (istep.eq.1) call outpost(ts1,ts2,ts3,pr,t,'dbg')
 
          if (mod(istep,iostep).eq.0) then
+
+!          backup coordinates                
+           call opcopy(tmpx,tmpy,tmpz,xm1,ym1,zm1)
+
+           call opadd2(xm1,ym1,zm1,vx,vy,vz)
+
+           call outpost(vx,vy,vz,pr,t,'dis')
            call outpost(velx,vely,velz,pr,t,'vel')
            call outpost(accx,accy,accz,pr,t,'acc')
           
@@ -256,7 +268,10 @@ c-----------------------------------------------------------------------
 
            call outpost(ts1,ts2,ts3,pr,vtrans,'dbg')
            call outpost(ts4,ts5,ts6,pr,vtrans,'db2')
-         
+
+!          restore coordinates                
+           call opcopy(xm1,ym1,zm1,tmpx,tmpy,tmpz)
+        
          endif
 
          if (.not.fsi_iftran) then

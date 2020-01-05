@@ -7,7 +7,7 @@ stopAt = numSteps #endTime
 #endTime = 1.0
 numSteps =10000
 
-dt = 1e-05
+dt = 1e-04
 timeStepper = bdf2 #char #steady
 variableDt = no 
 #targetCFL = 50.
