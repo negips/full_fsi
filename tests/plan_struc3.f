@@ -89,12 +89,20 @@
 !     First Structural solve
       call opzero(resv1,resv2,resv3)
       call opzero(resx1,resx2,resx3)
+      call opzero(bfx,bfy,bfz)
+
+!     setting structural damping to zero for now
+      call rzero(struct_damp,lx1*ly1*lz1*lelv)
+      
 
       do igeom=1,ngeom
 
         if (igeom.eq.1) then
           call struct_makef
         else
+
+!         debugging                
+          call opcopy(ts1,ts2,ts3,bfx,bfy,bfz)
 
 !         initial residual for correction 
           call struct_cresvif(resv1,resv2,resv3)
@@ -103,32 +111,6 @@
           call solve_elasticity(resv1,resv2,resv3)
 
           call update_fields(resv1,resv2,resv3)
-
-!!         New displacements          
-!!          call opcopy(vx,vy,vz,resv1,resv2,resv3)
-!          call opadd2(vx,vy,vz,resv1,resv2,resv3)
-!
-!!         Un+1 - Un
-!          call opcopy(resv1,resv2,resv3,vx,vy,vz)
-!          call sub2(resv1,resv2,resv3,vxlag,vylag,vzlag)
-!
-!!         New velocity            
-!!         Vn+1 = 2/DT*(Un+1 - Un) - Vn            
-!          const=2./DT
-!          call opcmult(resv1,resv2,resv3,const)
-!          call opcopy(resx1,resx2,resx3,velx,vely,velz)     ! save  
-!          call opsub2(velx,vely,velz,resv1,resv2,resv3)
-!          call opcmult(velx,vely,velz,-1.)
-!          
-!!         New Acceleration            
-!!         An+1 = -[An - (4/DT^2)*(Un+1 - Un) + 4/DT*Vn]
-!          const=2./DT
-!          call opcmult(resv1,resv2,resv3,const) ! already has 2/DT factor
-!          call opsub2(accx,accy,accz,resv1,resv2,resv3)
-!
-!          const=4./DT
-!          call opadd2cm(accx,accy,accz,resx1,resx2,resx3,const)
-!          call opcmult(accx,accy,accz,-1.)
 
         endif
       enddo
@@ -147,12 +129,14 @@
       include 'INPUT'
       include 'CTIMER'
 
+      include 'STRUCT'        ! fsi_iftran
+
       etime1 = dnekclock()
 
       call struct_makeuf                  ! body forcing in the structure
                                           ! Contains mass matrix
-
-      if (iftran) then
+                                         
+      if (fsi_iftran) then
         call make_accf                    ! terms due to acceleration
         call make_velf                    ! terms due to velocity
         call make_dxf                     ! terms due to displacement
@@ -171,7 +155,6 @@
       include 'SIZE'
       include 'INPUT'   ! iftran
       include 'SOLN'    ! bfx,bfy,bfz
-      include 'STRUCT'  ! struct_bfdx, ...
       include 'MASS'    ! BM1
       include 'TSTEP'   ! time
 
@@ -234,8 +217,12 @@ C
       include 'NEKUSE'
 
       integer ix,iy,iz,ieg
+      real amp
 
-      ffx = 0.
+      amp = 1.0e+4
+      ffx = amp*exp(-((y-0.065)/0.01)**2 - ((x-0.005)/0.001)**2) !*cos(x)
+
+!      ffx = 0.
       ffy = 0.
       ffz = 0.
 
@@ -304,7 +291,6 @@ C
 
       integer nt
       real const
-      real damp_const
       integer ifld
       
       ifld = 1
@@ -318,15 +304,14 @@ C
 
       call opadd2 (bfx,bfy,bfz,ta1,ta2,ta3)
 
-!!     Damping terms here. For now set to zero
-!      damp_const = 0.
-!      const = 1.*damp_const
-!      call copy(h2,bm1,nt)
-!      call cmult(h2,const,nt)
-!
-!      call opcolv3(ta1,ta2,ta3,velx,vely,velz,h2)
-!
-!      call opadd2 (bfx,bfy,bfz,ta1,ta2,ta3)
+!     Damping terms here. For now set to zero
+      const = 1.
+      call cmult2(h2,struct_damp,const,nt)
+      call col2(h2,bm1,nt)
+
+      call opcolv3(ta1,ta2,ta3,velx,vely,velz,h2)
+
+      call opadd2 (bfx,bfy,bfz,ta1,ta2,ta3)
 
       return
       end subroutine make_velf
@@ -354,7 +339,6 @@ C
 
       integer nt
       real const
-      real damp_const
       integer ifld
       
       ifld = 1
@@ -368,15 +352,14 @@ C
 
       call opadd2 (bfx,bfy,bfz,ta1,ta2,ta3)
 
-!!     Damping terms here. For now set to zero
-!      damp_const = 0.
-!      const = (2./DT)*damp_const
-!      call copy(h2,bm1,nt)
-!      call cmult(h2,const,nt)
-!
-!      call opcolv3(ta1,ta2,ta3,vx,vy,vz,h2)
-!
-!      call opadd2 (bfx,bfy,bfz,ta1,ta2,ta3)
+!     Damping terms here. For now set to zero
+      const = 2./DT
+      call cmult2(h2,struct_damp,const,nt)
+      call col2(h2,bm1,nt)
+
+      call opcolv3(ta1,ta2,ta3,vx,vy,vz,h2)
+
+      call opadd2 (bfx,bfy,bfz,ta1,ta2,ta3)
 
       return
       end subroutine make_dxf
@@ -588,11 +571,11 @@ c-----------------------------------------------------------------------
 
 !     traction forces on the structure
       if (istep.eq.1) then
-        amp = 1.0e-00
+        amp =00.0e-00
       else
         amp = 0.
-      endif 
-      trx = amp*exp(-((y-0.8)/0.025)**2 - ((x-3.0)/0.1)**2) !*cos(x)
+      endif
+      trx = amp*exp(-((y-0.65)/0.025)**2 - ((x-3.0)/0.1)**2) !*cos(x)
       try = 0.
       trz = 0.
       
@@ -642,10 +625,6 @@ C
         call opsub2(resv1,resv2,resv3,bfx,bfy,bfz)
 
         call opcmult(resv1,resv2,resv3,-1.)
-
-!       debugging 
-!        call opcopy(ts4,ts5,ts6,resv1,resv2,resv3)
-
 
 !       if not solving for increment    
 !        call opcopy(resv1,resv2,resv3,bfx,bfy,bfz)
@@ -1083,6 +1062,10 @@ c-----------------------------------------------------------------------
       call copy(bmm,bm1,nt)
 !      call col2(bmm,vmult,nt)
 
+
+!     initialize solution      
+      call opzero(solv(1,1),solv(1,2),solv(1,3))
+
       ifconv = .false.        ! if converged
 
       ic = 0
@@ -1102,7 +1085,7 @@ c-----------------------------------------------------------------------
 !       normalize
         call opcmult(rv1,rv2,rv3,1./beta)
 
-!       save v part of first vector.
+!       save first vector.
         call opcopy(struct_krylv(1,1,1),struct_krylv(1,2,1),
      $                struct_krylv(1,3,1),rv1,rv2,rv3)
 
@@ -1130,7 +1113,6 @@ c-----------------------------------------------------------------------
               call opadd2cm(rv1,rv2,rv3,struct_krylv(1,1,j),
      $                   struct_krylv(1,2,j),struct_krylv(1,3,j),-beta)
 
-
             enddo  ! j
           enddo  ! ipass
 
@@ -1141,10 +1123,10 @@ c-----------------------------------------------------------------------
           struct_hessen(i+1,i) = beta
           struct_R(i+1,i)      = beta
 
-!         normalize v
+!         normalize 
           call opcmult(rv1,rv2,rv3,1./beta)
 
-!         save v part of the vector        
+!         save vector        
           call opcopy(struct_krylv(1,1,i+1),struct_krylv(1,2,i+1),
      $                struct_krylv(1,3,i+1),rv1,rv2,rv3)
 
@@ -1293,8 +1275,8 @@ c-----------------------------------------------------------------------
 
           call opcopy(rv1,rv2,rv3,resv(1,1),resv(1,2),resv(1,3))
 
-          call rzero(struct_hessen,nk*(nk+1))
-          call rzero(struct_R,nk*(nk+1))
+          call rzero(struct_hessen,(nk+1)*nk)
+          call rzero(struct_R,(nk+1)*nk)
 
           call rzero(rhs,nk+1)
           call rzero(lsq_resid,nk+1)
@@ -1323,6 +1305,7 @@ c------------------------------------------------------------------------
       include 'MASS'
       include 'SOLN'          ! v1mask,...
       include 'TSTEP'         ! dt
+      include 'STRUCT'
 
       real rv1(lx1*ly1*lz1*lelv)
       real rv2(lx1*ly1*lz1*lelv)
@@ -1359,24 +1342,27 @@ c------------------------------------------------------------------------
 !     Apply elasticity operator. Assuming transient simulation 
 !     y = Ax
 
-      ifld = 1
+      if (fsi_iftran) then
+        ifld = 1
 
-      nt = lx1*ly1*lz1*nelv
-      const = 4./(DT**2)
-      call cmult2(h2,vtrans(1,1,1,1,ifld),const,nt)
-      call col2(h2,bm1,nt)
+        nt = lx1*ly1*lz1*nelv
+        const = 4./(DT**2)
+        call cmult2(h2,vtrans(1,1,1,1,ifld),const,nt)
+        call col2(h2,bm1,nt)
 
-      call opcolv3(w1,w2,w3,rv1,rv2,rv3,h2)
+        call opcolv3(w1,w2,w3,rv1,rv2,rv3,h2)
 
-!!     damping term
-!      damp_const = 0.
-!      const = damp_const*2./DT
-!      call col2(h2,bm1,nt)
-!      call cmult(h2,const,nt)
-!
-!      call opcolv3(w4,w5,w6,rv1,rv2,rv3,h2)
-!
-!      call add2(w1,w2,w3,w4,w5,w6)
+!       damping term
+        const = 2./DT
+        call cmult2(h2,struct_damp,const,nt)
+        call col2(h2,bm1,nt)
+
+        call opcolv3(w4,w5,w6,rv1,rv2,rv3,h2)
+
+        call opadd2(w1,w2,w3,w4,w5,w6)
+      else
+        call opzero(w1,w2,w3)
+      endif        
 
       ifdss1=.false.
       ifmsk1=.false.
@@ -1426,16 +1412,10 @@ c------------------------------------------------------------------------
       real delx(1),dely(2),delz(3)
 
       real const
-      logical ifupd       ! if we have solved for update
 
-      ifupd=.true.
 
 !     New displacements
-      if (ifupd) then      
-        call opadd2(vx,vy,vz,delx,dely,delz)
-      else
-        call opcopy(vx,vy,vz,delx,dely,delz)
-      endif        
+      call opadd2(vx,vy,vz,delx,dely,delz)
 
 !     Un+1 - Un
       call opcopy(resv1,resv2,resv3,vx,vy,vz)

@@ -151,7 +151,8 @@ c-----------------------------------------------------------------------
       logical ifmsk,ifdss
       integer nt
 
-      real            resv1 (lx1,ly1,lz1,lelv)
+      real resv1,resv2,resv3,resx1,resx2,resx3,h2
+      common /scrns/  resv1 (lx1,ly1,lz1,lelv)
      $ ,              resv2 (lx1,ly1,lz1,lelv)
      $ ,              resv3 (lx1,ly1,lz1,lelv)
      $ ,              resx1 (lx1,ly1,lz1,lelv)
@@ -170,6 +171,8 @@ c-----------------------------------------------------------------------
         call opzero(vxlag,vylag,vzlag)
         call opzero(accx,accy,accz)
         call opzero(bfx,bfy,bfz)
+
+        call outpost(v1mask,v2mask,v3mask,pr,t,'msk')
       endif
 
       iftest = .false.
@@ -208,9 +211,11 @@ c-----------------------------------------------------------------------
 
       if (istep.gt.0) then
 
+        fsi_iftran = .true. 
+
         call plan_s
 
-        call outpost(ts1,bm1,ts3,pr,t,'inc')
+!        call outpost(ts1,bm1,ts3,pr,t,'inc')
 !        call outpost(ts4,ts5,ts6,pr,t,'db2')
 
 !        do i=1,struct_nkryl
@@ -246,7 +251,16 @@ c-----------------------------------------------------------------------
            call outpost(accx,accy,accz,pr,t,'acc')
           
            call outpost(vxlag,vylag,vzlag,pr,t,'lag')
+
+           call outpost(ts1,ts2,ts3,pr,vtrans,'dbg')
+           call outpost(ts4,ts5,ts6,pr,vtrans,'db2')
+         
          endif
+
+         if (.not.fsi_iftran) then
+           call outpost(vx,vy,vz,pr,t,'   ')
+           call exitt
+         endif           
 
       endif        
       
