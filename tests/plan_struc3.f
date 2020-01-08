@@ -567,8 +567,9 @@ c-----------------------------------------------------------------------
       uz = 0.
 
 !     traction forces on the structure
-      if (istep.gt.0) then
-        amp =1.0e-02
+      if (istep.eq.1) then
+!        amp =1.0e-02*cos(2*pi*time)
+        amp =1.0e-0
       else
         amp = 0.
       endif

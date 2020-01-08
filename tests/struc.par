@@ -5,7 +5,7 @@
 #startFrom = 
 stopAt = numSteps #endTime
 #endTime = 1.0
-numSteps =10000
+numSteps =100000
 
 dt = 1e-04
 timeStepper = bdf2 #char #steady
@@ -13,7 +13,7 @@ variableDt = no
 #targetCFL = 50.
 
 writeControl = timeStep #runTime
-writeInterval = 10
+writeInterval = 100
 
 userParam01 = 200    # start time collecting statistics
 userParam02 = 20     # writeInterval 1D statistics

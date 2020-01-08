@@ -264,10 +264,10 @@ c-----------------------------------------------------------------------
            call outpost(velx,vely,velz,pr,t,'vel')
            call outpost(accx,accy,accz,pr,t,'acc')
           
-           call outpost(vxlag,vylag,vzlag,pr,t,'lag')
-
-           call outpost(ts1,ts2,ts3,pr,vtrans,'dbg')
-           call outpost(ts4,ts5,ts6,pr,vtrans,'db2')
+!           call outpost(vxlag,vylag,vzlag,pr,t,'lag')
+!
+!           call outpost(ts1,ts2,ts3,pr,vtrans,'dbg')
+!           call outpost(ts4,ts5,ts6,pr,vtrans,'db2')
 
 !          restore coordinates                
            call opcopy(xm1,ym1,zm1,tmpx,tmpy,tmpz)
