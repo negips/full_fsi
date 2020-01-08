@@ -5,6 +5,79 @@
 !
 !======================================================================       
 
+      subroutine fsi_coupling()
+
+      implicit none
+      include 'SIZE'
+      include 'NEKNEK'        ! igeom
+      include 'GEOM'          ! ifgeom
+      include 'INPUT'         ! ifrich
+      include 'CTIMER'
+      include 'STRUCT'
+
+      integer itr
+      logical ifconverged
+
+!     Do nothing if there's no FSI      
+      if ((.not.fsi_ifstruct).and.(.not.fsi_iffluid)) return 
+
+      ifconverged = .false.
+      itr = 0
+
+      if (fsi_iffluid) then
+
+!       Send fluid stresses to structure
+
+!       Get broadcasted convergence
+
+!       call check_fsi_convergence()         
+        do while (.not.ifconverged)
+
+          itr = itr + 1
+
+!         Get new interface velocity          
+
+!         Stokes correction step            
+!          call stokes_solve()
+
+!         Send fluid stresses to structure
+
+!         Get broadcasted convergence
+
+        enddo
+
+!       Extend interface velocity to the fluid domain      
+
+
+      else
+
+        do while (.not.ifconverged)
+
+          itr = itr + 1
+
+!         Solve structural equation                  
+          call plan_s               ! receive interface stresses
+          
+!         Check if interface velocities match
+
+!         if they don't match, use fixed point iteration
+!         to predict interface velocity for next iteration 
+!           ifconverged=.false.
+!           Broadcast flag to fluid
+!           Send new interface velocity
+
+!         if they match          
+!           ifconverged=.true.
+!           Broadcast flag to fluid
+        enddo          
+
+      endif
+
+
+      return            
+      end subroutine fsi_coupling
+!---------------------------------------------------------------------- 
+
       subroutine fsi_advance()
 
       implicit none
