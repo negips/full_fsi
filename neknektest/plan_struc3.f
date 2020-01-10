@@ -3,140 +3,9 @@
 !     with linear structural equations      
 !     Author: Prabal S. Negi
 !
+!----------------------------------------------------------------------       
 !======================================================================       
 
-      subroutine fsi_coupling()
-
-      implicit none
-      include 'SIZE'
-      include 'NEKNEK'        ! igeom
-      include 'GEOM'          ! ifgeom
-      include 'INPUT'         ! ifrich
-      include 'CTIMER'
-      include 'STRUCT'
-      include 'FSI'           
-      include 'MVGEOM'        ! wx
-      include 'TSTEP'
-
-      integer itr
-      logical ifconverged
-
-!     Do nothing if there's no FSI      
-      if ((.not.fsi_ifstruct).and.(.not.fsi_iffluid)) return 
-
-!     Just initialization for the fluid      
-      if (istep.eq.0) then
-
-        if (fsi_iffluid) then            
-          call opzero(ext_vx,ext_vy,ext_vz) 
-          call opzero(wx,wy,wz)
-        else
-          call opzero(velx,vely,velz)
-          call opzero(accx,accy,accz)
-          continue
-        endif  
-
-        return
-      endif        
-
-      ifconverged = .false.
-      itr = 0
-
-      if (fsi_iffluid) then
-
-!       Send fluid stresses to structure
-
-!       Get broadcasted convergence
-
-!       call check_fsi_convergence()         
-        do while (.not.ifconverged)
-
-          itr = itr + 1
-
-!         Get new interface velocity          
-
-!         Stokes correction step          
-!          call stokes_solve()
-
-!         Send fluid stresses to structure
-
-!         Get broadcasted convergence
-
-        enddo
-
-!       Extend interface velocity to the fluid domain      
-
-      else
-
-        do while (.not.ifconverged)
-
-          itr = itr + 1
-
-!         Solve structural equation                  
-          call plan_s               ! receive interface stresses
-          
-!         Check if interface velocities match
-
-!         if they don't match, use fixed point iteration
-!         to predict interface velocity for next iteration 
-!           ifconverged=.false.
-!           Broadcast flag to fluid
-!           Send new interface velocity
-
-!         if they match          
-!           ifconverged=.true.
-!           Broadcast flag to fluid
-        enddo          
-
-      endif
-
-
-      return            
-      end subroutine fsi_coupling
-!---------------------------------------------------------------------- 
-
-      subroutine fsi_advance()
-
-      implicit none
-      include 'SIZE'
-      include 'NEKNEK'        ! igeom
-      include 'GEOM'          ! ifgeom
-      include 'INPUT'         ! ifrich
-      include 'CTIMER'
-      include 'STRUCT'
-
-      integer ntot
-      logical ifconverged
-
-      ifconverged = .false.
-
-      if (fsi_iffluid) then
-
-!       call check_fsi_convergence()         
-        do while (.not.ifconverged)            
-!         Stokes correction step            
-!          call stokes_solve()
-
-!         call check_fsi_convergence(ifconverged)
-
-        enddo
-      else            
-!       First Structural solve
-        do igeom=1,ngeom
-
-          if (ifgeom) then
-             if (.not.ifrich) call gengeom (igeom)
-             call geneig  (igeom)
-          endif
-        
-!          call struct(igeom) 
-        enddo
-      endif
-
-
-      return            
-      end subroutine fsi_advance
-!---------------------------------------------------------------------- 
       subroutine plan_s 
 
       implicit none
@@ -451,7 +320,6 @@ C
       return
       end subroutine make_dxf
 !----------------------------------------------------------------------
-
       subroutine struct_bcneutr
 
       implicit none
@@ -552,6 +420,79 @@ C
 
       return
       end subroutine struct_bcneutr
+c-----------------------------------------------------------------------
+      subroutine struct_fluidstress
+
+      implicit none
+
+      INCLUDE 'SIZE'
+      INCLUDE 'SOLN'
+      INCLUDE 'GEOM'
+      INCLUDE 'INPUT'
+      INCLUDE 'NEKNEK'
+      INCLUDE 'STRUCT'        ! struct_ssx
+
+      real trx,try,trz,stc
+      common /scrsf/ trx(lx1,ly1,lz1)
+     $             , try(lx1,ly1,lz1)
+     $             , trz(lx1,ly1,lz1)
+      common /ctmp0/ stc(lx1,ly1,lz1)
+      real sigst(lx1,ly1)
+
+      logical ifalgn,ifnorx,ifnory,ifnorz
+      
+      character cb*3
+      common  /nekcb/ cb
+
+      integer iel,ifc,ifld,nface,nxy1,nxyz1
+      real bc1,bc2,bc3,bc4
+
+      integer kx1,kx2,ky1,ky2,kz1,kz2
+      integer ix,iy,iz
+
+      integer j
+
+      ifld  = 1
+      nface = 2*ldim
+      nxy1  = lx1*ly1
+      nxyz1 = lx1*ly1*lz1
+C
+      do 104 iel=1,nelv
+      do 104 ifc=1,nface
+c
+         cb  = cbc (ifc,iel,ifld)
+         bc1 = bc(1,ifc,iel,ifld)
+         bc2 = bc(2,ifc,iel,ifld)
+         bc3 = bc(3,ifc,iel,ifld)
+         bc4 = bc(4,ifc,iel,ifld)
+
+         call rzero3 (trx,try,trz,nxyz1)
+
+!        Here I presume the force exchange has already been done         
+!        Forces due to the fluid
+         if (intflag(ifc,iel).eq.1) then
+           call facind (kx1,kx2,ky1,ky2,kz1,kz2,nx1,ny1,nz1,ifc)
+           do 105 iz=kz1,kz2
+           do 105 iy=ky1,ky2
+           do 105 ix=kx1,kx2
+              trx(ix,iy,iz) = struct_ssx(ix,iy,iz,iel) 
+              try(ix,iy,iz) = struct_ssy(ix,iy,iz,iel) 
+              trz(ix,iy,iz) = struct_ssz(ix,iy,iz,iel) 
+  105      continue
+
+!          has already been multiplied by area 
+!           call faccvs (trx,try,trz,area(1,1,ifc,iel),ifc)
+           if (ifqinp(ifc,iel)) call globrot (trx,try,trz,iel,ifc)
+         endif
+
+         call add2 (bfx(1,1,1,iel),trx,nxyz1)
+         call add2 (bfy(1,1,1,iel),try,nxyz1)
+         if (ldim.eq.3) call add2 (bfz(1,1,1,iel),trz,nxyz1)
+
+  104 continue
+
+      return
+      end subroutine struct_fluidstress
 c-----------------------------------------------------------------------
 
       subroutine struct_faceiv (cb,v1,v2,v3,iel,iface,nx,ny,nz)
@@ -700,11 +641,8 @@ C
         call lagvel
 
         call struct_bcdirvc(vx,vy,vz,v1mask,v2mask,v3mask)
-        call struct_bcneutr       ! add traction to rhs 
-
-!       debugging
-        call opcopy(ts1,ts2,ts3,bfx,bfy,bfz)
-
+        call struct_bcneutr       ! add user traction to rhs 
+        call struct_fluidstress   ! add fluid traction to rhs 
 
         call opcopy(resv1,resv2,resv3,vx,vy,vz)
 

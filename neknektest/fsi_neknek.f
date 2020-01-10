@@ -1,11 +1,144 @@
-!----------------------------------------------------------------------
+!====================================================================== 
 !
 !     NekNek routines for FSI
 !     Author: Prabal Negi
-!     Comments: Mostly slightly modified routines from multimesh.f      
+!     Comments:  
 ! 
 !---------------------------------------------------------------------- 
 !====================================================================== 
+
+      subroutine fsi_coupling()
+
+      implicit none
+      include 'SIZE'
+      include 'NEKNEK'        ! igeom
+      include 'GEOM'          ! ifgeom
+      include 'INPUT'         ! ifrich
+      include 'CTIMER'
+      include 'STRUCT'
+      include 'FSI'           
+      include 'MVGEOM'        ! wx
+      include 'TSTEP'
+      include 'PARALLEL'      ! iglobalcomm
+      include 'SOLN'
+
+      integer itr
+      logical ifconverged
+      real scale
+
+
+      scale = 1.0
+
+!     Do nothing if there's no FSI      
+      if ((.not.fsi_ifstruct).and.(.not.fsi_iffluid)) return 
+
+!     Just initialization for the fluid      
+      if (istep.eq.0) then
+
+!       I'll controll the neknek processes myself 
+        ifneknekc = .false.    
+
+        if (fsi_iffluid) then            
+          call opzero(ext_vx,ext_vy,ext_vz) 
+          call opzero(wx,wy,wz)
+        else
+          call opzero(velx,vely,velz)
+          call opzero(accx,accy,accz)
+          continue
+        endif  
+
+        return
+      endif        
+
+      ifconverged = .false.
+      itr = 0
+
+      if (fsi_iffluid) then
+
+!       Calculate fluid stresses                
+        call fluid_forces(struct_ssx,struct_ssy,struct_ssz,
+     $                    vx,vy,vz,pr,scale)
+
+
+!       Send fluid stresses to structure
+        call fsi_neknek_stressex
+
+        ifconverged = .true.  ! for now no iterations
+
+!       Have to figure out how to do this        
+!!       Get broadcasted convergence
+!        call setnekcomm(iglobalcomm)
+!        call lbcast(ifconverged)
+!        call setnekcomm(intracomm)
+
+
+!       Get interface velocities        
+        call fsi_neknek_velex
+
+!       call check_fsi_convergence()         
+        do while (.not.ifconverged)
+
+          itr = itr + 1
+
+!         Get new interface velocity          
+
+!         Stokes correction step          
+!          call stokes_solve()
+
+!         Send fluid stresses to structure
+
+!         Get broadcasted convergence
+
+        enddo
+
+!       Extend interface velocity to the fluid domain      
+
+      else
+
+        do while (.not.ifconverged)
+
+          itr = itr + 1
+
+!         Get fluid stresses            
+          call fsi_neknek_stressex
+
+!         Solve structural equation                  
+          call plan_s               ! receive interface stresses
+          
+!         Check if interface velocities match
+
+!         if they don't match, use fixed point iteration
+!         to predict interface velocity for next iteration 
+!           ifconverged=.false.
+!           Broadcast flag to fluid
+!           Send new interface velocity
+
+!         if they match          
+!           ifconverged=.true.
+!           Broadcast flag to fluid
+
+!         Figure out how to bcast from structural part            
+!!         For now doing just one iteration            
+          ifconverged = .true.
+!          call setnekcomm(iglobalcomm)
+!          call lbcast(ifconverged)
+!          call setnekcomm(intracomm)
+
+        enddo 
+
+!       Send velocities to fluid            
+        call fsi_neknek_velex
+        call opcopy(ext_vx,ext_vy,ext_vz,valint(1,1,1,1,1),
+     $              valint(1,1,1,1,2),valint(1,1,1,1,3))
+
+
+      endif
+
+
+      return            
+      end subroutine fsi_coupling
+!---------------------------------------------------------------------- 
+
       subroutine fsi_neknek_velex
 
       implicit none            

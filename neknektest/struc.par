@@ -36,8 +36,8 @@ residualProj = yes
 [VELOCITY]
 residualTol = 1e-8
 residualProj = yes
-density = 1.0
-viscosity = -10
+density = 100.0
+viscosity = 1
 advection = yes
 
 

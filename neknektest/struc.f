@@ -34,11 +34,16 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine userbc (ix,iy,iz,iside,ieg)
+
       implicit none
+
       include 'SIZE'
       include 'NEKUSE'          ! UX, UY, UZ, TEMP, X, Y, PA
       include 'NEKNEK'
       include 'PARALLEL'
+      include 'FSI'             ! EXT_VX,...
+      include 'STRUCT'          ! FSI_IFFLUID
+
       integer ix,iy,iz,iside,ieg,iel
 
       ux = 1.0
@@ -46,10 +51,10 @@ c-----------------------------------------------------------------------
       uz = 0. 
  
       iel = gllel(ieg)
-      if (imask(ix,iy,iz,iel).eq.1) then
-        ux = valint(ix,iy,iz,iel,1)
-        uy = valint(ix,iy,iz,iel,2)
-        uz = valint(ix,iy,iz,iel,3)
+      if ((fsi_iffluid).and.(imask(ix,iy,iz,iel).eq.1)) then
+        ux = ext_vx(ix,iy,iz,iel)
+        uy = ext_vy(ix,iy,iz,iel)
+        uz = ext_vz(ix,iy,iz,iel)
         if (nfld_neknek.gt.3) temp = valint(ix,iy,iz,iel,ldim+2)
       end if
       
@@ -68,11 +73,11 @@ c -----------------------------------------------------------------------
       real amp, ran
       
 
-      amp = 1.0
+      amp = 0.0
       if (fsi_ifstruct) then
         ux  = 0.1 + 0*cos(x)
       else
-        ux = 1.0 + amp*cos(x)
+        ux = 0.0 + amp*cos(x)
       endif  
      
       uy = amp*sin(y)
@@ -94,9 +99,13 @@ c-----------------------------------------------------------------------
 
       ninter = 1  ! order of interface extrapolation
 
-      nfld_neknek = 3   ! field to interpolate
-                        ! 3: u,v,pr (in 2D)
-
+      if (if3d) then
+        nfld_neknek = 4   ! field to interpolate
+                          ! 4: u,v,w,pr (in 3D)
+      else
+        nfld_neknek = 3   ! field to interpolate
+                          ! 3: u,v,pr (in 2D)
+      endif
 
       if (uparam(1).eq.1) then
         fsi_ifstruct = .true.
@@ -156,6 +165,7 @@ c-----------------------------------------------------------------------
 
       real scale
 
+
       call outpost(vx,vy,vz,pr,t,'  ')
 
       call fsi_neknek_velex
@@ -166,11 +176,7 @@ c-----------------------------------------------------------------------
       call outpost(vx,vy,vz,pr,t,'  ')
 
       nt = nx1*ny1*nz1*nelt
-!      do i=1,nt
-!        vy(i,1,1,1)=imask(i,1,1,1)+0.
-!      enddo
 
-      call opzero(bfx,bfy,bfz)
       scale = 1.
       if (fsi_iffluid) then
         call fluid_forces(struct_ssx,struct_ssy,struct_ssz,
