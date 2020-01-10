@@ -33,73 +33,56 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine userchk
+      subroutine userbc (ix,iy,iz,iside,ieg)
 
-!      implicit none
+      implicit none
+
       include 'SIZE'
-      include 'INPUT'
-      include 'TSTEP'
-      include 'SOLN'
+      include 'NEKUSE'          ! UX, UY, UZ, TEMP, X, Y, PA
+      include 'NEKNEK'
+      include 'PARALLEL'
+      include 'FSI'             ! EXT_VX,...
+      include 'STRUCT'          ! FSI_IFFLUID
 
-      integer ltmp
-      parameter (ltmp=100)
-      integer*8 newnum(ltmp)
-      integer gsh_tmp
-      real tst(ltmp)
+      integer ix,iy,iz,iside,ieg,iel
 
-      integer len2
-
-      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
-
-      integer i
-
+      ux = 1.0
+      uy = 0.
+      uz = 0. 
+ 
+      iel = gllel(ieg)
+      if ((fsi_iffluid).and.(imask(ix,iy,iz,iel).eq.1)) then
+        ux = ext_vx(ix,iy,iz,iel)
+        uy = ext_vy(ix,iy,iz,iel)
+        uz = ext_vz(ix,iy,iz,iel)
+        if (nfld_neknek.gt.3) temp = valint(ix,iy,iz,iel,ldim+2)
+      end if
       
       return
       end
 c -----------------------------------------------------------------------
-       subroutine userbc (ix,iy,iz,iside,ieg)
-       implicit none
-       include 'SIZE'
-       include 'NEKUSE'          ! UX, UY, UZ, TEMP, X, Y, PA
-       integer ix,iy,iz,iside,ieg
+      subroutine useric (ix,iy,iz,ieg)
 
-       ux = 1.0
-       uy = 0.
-       uz = 0. 
-       
-       return
-       end
-c -----------------------------------------------------------------------
-       subroutine useric (ix,iy,iz,ieg)
-       implicit none
+      implicit none
+
       include 'SIZE'
       include 'NEKUSE'          ! UX, UY, UZ, TEMP, X, Y, Z
+      include 'STRUCT'
       integer ix,iy,iz,ieg
 
       real amp, ran
       
-      amp = 0.2
 
-      ran = 3.e4*(ieg+X*sin(Y)+Z*cos(Y))
-     $     + 4.7e2*ix*iy*iz - 1.5e3*ix*iy + .5e5*ix
-      ran = 6.e3*sin(ran)
-      ran = 3.e3*sin(ran)
-      ran = cos(ran)
-      ux = 1. + ran*amp
+      amp = 0.0
+      if (fsi_ifstruct) then
+        ux  = 0.0 + 0*cos(x)
+      else
+        ux = 1.0 + amp*cos(x)
+      endif  
+     
+      uy = amp*sin(y)
       
-      ran = (2+ran)*1.e4*(ieg+Y*sin(Z)+X*cos(Z))
-     $     + 1.5e3*ix*iy*iz - 2.5e3*ix*iy + 8.9e4*ix
-      ran = 2.e3*sin(ran)
-      ran = 7.e3*sin(ran)
-      ran = cos(ran)
-      uy = ran*amp
-      
-      ran = (4+ran)*5.1e4*(ieg+Z*sin(X)+Y*cos(X))
-     $     + 4.6e3*ix*iy*iz - 2.9e4*ix*iy + 3.7e3*ix
-      ran = 9.e3*sin(ran)
-      ran = 4.e3*sin(ran)
-      ran = cos(ran)
-      uz = ran*amp
+      uz = 0.
 
       return
       end
@@ -110,13 +93,27 @@ c-----------------------------------------------------------------------
       include 'INPUT'         ! ngeom
       include 'NEKNEK'        ! nfld_neknek
       include 'TSTEP'         ! ninter
+      include 'STRUCT'
 
-      ngeom = 20   ! >2 => internal iterations
+      ngeom = 2   ! >2 => internal iterations
 
-      ninter = 2  ! order of interface extrapolation
+      ninter = 1  ! order of interface extrapolation
 
-      nfld_neknek = 3   ! field to interpolate
-                        ! 3: u,v,pr (in 2D) 
+      if (if3d) then
+        nfld_neknek = 4   ! field to interpolate
+                          ! 4: u,v,w,pr (in 3D)
+      else
+        nfld_neknek = 3   ! field to interpolate
+                          ! 3: u,v,pr (in 2D)
+      endif
+
+      if (uparam(1).eq.1) then
+        fsi_ifstruct = .true.
+        fsi_iffluid  = .false.
+      else
+        fsi_ifstruct = .false.
+        fsi_iffluid  = .true.
+      endif            
 
       return
       end
@@ -137,9 +134,45 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'INPUT'           ! param, if3d
       include 'MASS'            ! volvm1      
+      include 'NEKNEK'
+
       
-      
+
       return
       end
 c-----------------------------------------------------------------------
+      subroutine userchk
+
+      implicit none
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'TSTEP'
+      include 'SOLN'
+      include 'STRUCT'
+      include 'MASS'
+      include 'NEKNEK'        ! igeom
+      include 'GEOM'
+
+      integer ltmp
+      parameter (ltmp=100)
+      integer*8 newnum(ltmp)
+      integer gsh_tmp
+      real tst(ltmp)
+
+      integer len2
+      integer i,nt
+
+      real scale
+
+
+      fsi_iftran = .true. 
+
+      call fsi_coupling
+
+
+      
+      return
+      end
+c -----------------------------------------------------------------------
 

@@ -18,7 +18,7 @@
  Number of processors:           1
  REAL    wdsize      :           8
  INTEGER wdsize      :           4
- Timer accuracy      :  4.60E-08
+ Timer accuracy      :  3.50E-08
   
  Reading /home/prabal/workstation/git_kth/full_fsi/neknektest/struc.par                                                                      
 general = [(null)]
@@ -47,8 +47,8 @@ pressure:residualproj = [yes]
 velocity = [(null)]
 velocity:residualtol = [1e-8]
 velocity:residualproj = [yes]
-velocity:density = [1.0]
-velocity:viscosity = [-10]
+velocity:density = [100.0]
+velocity:viscosity = [1]
 velocity:advection = [yes]
  Reading /home/prabal/workstation/git_kth/full_fsi/neknektest/struc.re2                                                                      
  nelgt/nelgv/lelt:           4           4         103
@@ -57,11 +57,11 @@ velocity:advection = [yes]
  partioning elements to MPI ranks
  Reading /home/prabal/workstation/git_kth/full_fsi/neknektest/struc.ma2                                                                      
   
- done :: partioning   0.61224E-04 sec
+ done :: partioning   0.53446E-04 sec
 
   preading mesh 
   preading bc for ifld           1
- done :: read .re2 file    0.22E-02 sec
+ done :: read .re2 file    0.23E-02 sec
 
  setup mesh topology
    Right-handed check complete for           4 elements. OK.
@@ -72,7 +72,7 @@ velocity:advection = [yes]
 gs_setup: 0 unique labels shared
    handle bytes (avg, min, max): 932 932 932
    buffer bytes (avg, min, max): 0 0 0
-   setupds time 8.8292E-05 seconds   0  8          81           4
+   setupds time 9.4885E-05 seconds   0  8          81           4
            4  max multiplicity
  done :: setup mesh topology
   
@@ -175,7 +175,7 @@ gs_setup: 0 unique labels shared
 gs_setup: 0 unique labels shared
    handle bytes (avg, min, max): 356 356 356
    buffer bytes (avg, min, max): 0 0 0
-   setupds time 4.6445E-05 seconds   1  2           9           4
+   setupds time 5.2917E-05 seconds   1  2           9           4
    setvert2d:   4          33          49          33          33
  call usrsetvert
  done :: usrsetvert
@@ -183,7 +183,7 @@ gs_setup: 0 unique labels shared
 gs_setup: 0 unique labels shared
    handle bytes (avg, min, max): 548 548 548
    buffer bytes (avg, min, max): 0 0 0
-   setupds time 6.9482E-05 seconds   2  4          33           4
+   setupds time 7.5789E-05 seconds   2  4          33           4
    setvert2d:   4          33          49          33          33
  call usrsetvert
  done :: usrsetvert
@@ -191,7 +191,7 @@ gs_setup: 0 unique labels shared
 gs_setup: 0 unique labels shared
    handle bytes (avg, min, max): 548 548 548
    buffer bytes (avg, min, max): 0 0 0
-   setupds time 4.8498E-05 seconds   3  4          33           4
+   setupds time 4.5193E-05 seconds   3  4          33           4
    setvert2d:   6          57         121          57          57
  call usrsetvert
  done :: usrsetvert
@@ -199,7 +199,7 @@ gs_setup: 0 unique labels shared
 gs_setup: 0 unique labels shared
    handle bytes (avg, min, max): 740 740 740
    buffer bytes (avg, min, max): 0 0 0
-   setupds time 5.8083E-05 seconds   4  6          57           4
+   setupds time 5.5392E-05 seconds   4  6          57           4
  setup h1 coarse grid, nx_crs=           2
  call usrsetvert
  done :: usrsetvert
@@ -207,7 +207,7 @@ gs_setup: 0 unique labels shared
 gs_setup: 0 unique labels shared
    handle bytes (avg, min, max): 356 356 356
    buffer bytes (avg, min, max): 0 0 0
- done :: setup h1 coarse grid    1.5658699999999970E-004  sec
+ done :: setup h1 coarse grid    1.3875399999999961E-004  sec
   
  call usrdat3
  done :: usrdat3
@@ -216,54 +216,95 @@ gs_setup: 0 unique labels shared
  nekuic (1) for ifld            1
  call nekuic for vel  
  xyz min     3.0000       0.0000       0.0000    
- uvwpt min  0.10000       0.0000       0.0000       0.0000       0.0000    
+ uvwpt min   0.0000       0.0000       0.0000       0.0000       0.0000    
  xyz max     3.2500       1.0000       0.0000    
- uvwpt max  0.10000      0.84147       0.0000       0.0000       0.0000    
+ uvwpt max   0.0000       0.0000       0.0000       0.0000       0.0000    
  done :: set initial conditions
   
              Multidomain data exchange ...   3
-          0  done :: Multidomain data exchange   7.3849E-05   5.0884E-03
+          0  done :: Multidomain data exchange   7.6634E-05   5.9805E-03
  call userchk
+ done :: userchk
 
-        0  0.0000E+00 Write checkpoint
+gridpoints unique/tot:           225          256
+  
+ Initialization successfully completed   0.16101E-01 sec
+
+Starting time loop ...
+
+     DT/DTCFL/DTFS/DTINIT   0.100E-02   0.469-309   0.109-321   0.100E-02
+Step      1, t= 1.0000000E-03, DT= 1.0000000E-03, C=  0.000 0.0000E+00 0.0000E+00
+             Multidomain data exchange ...   3
+          1  done :: Multidomain data exchange (Stress)   5.9204E-05   4.0600E-03
+ Initial residual too low
+             Multidomain data exchange ...   3
+          1  done :: Multidomain data exchange (Vel)   6.3405E-05   6.7091E-05
+
+        1  1.0000E-03 Write checkpoint
        FILE:/home/prabal/workstation/git_kth/full_fsi/neknektest/struc0.f00001                                                                  
 
-        0  0.0000E+00 done :: Write checkpoint
+        1  1.0000E-03 done :: Write checkpoint
                               file size =     503.E-05MB
-                              avg data-throughput =    17.4MB/s
-                              io-nodes =     1
-
-             Multidomain data exchange ...   3
-          0  done :: Multidomain data exchange (Vel)   5.7628E-05   1.8955E-04
-
-        0  0.0000E+00 Write checkpoint
-       FILE:/home/prabal/workstation/git_kth/full_fsi/neknektest/struc0.f00002                                                                  
-
-        0  0.0000E+00 done :: Write checkpoint
-                              file size =     503.E-05MB
-                              avg data-throughput =    26.6MB/s
+                              avg data-throughput =    14.5MB/s
                               io-nodes =     1
 
 
-        0  0.0000E+00 Write checkpoint
-       FILE:/home/prabal/workstation/git_kth/full_fsi/neknektest/struc0.f00003                                                                  
+end of time-step loop
 
-        0  0.0000E+00 done :: Write checkpoint
-                              file size =     503.E-05MB
-                              avg data-throughput =    27.8MB/s
-                              io-nodes =     1
+ 
+runtime statistics:
+ init time   1.6101412999999946E-002   3.1066482419360861     
+ prep time           1   3.8410500000007897E-004   7.4110211505605733E-002
+ pres time           0   0.0000000000000000        0.0000000000000000     
+ crsl time           0   0.0000000000000000        0.0000000000000000     
+ crsl min    0.0000000000000000     
+ crsl max    0.0000000000000000     
+ crsl avg    0.0000000000000000     
+ hmhz time           0   0.0000000000000000        0.0000000000000000     
+ eslv time           0   0.0000000000000000        0.0000000000000000     
+ makf time   6.0720000000014096E-005   1.1715473744472214E-002
+ makq time   0.0000000000000000        0.0000000000000000     
+ proj time   0.0000000000000000        0.0000000000000000     
+ usvp time           0   0.0000000000000000        0.0000000000000000     
+ usfq time           0   0.0000000000000000        0.0000000000000000     
+ usbc time           1   2.1049999999966928E-005   4.0614414084436000E-003
+ usbc min    2.1049999999966928E-005
+ usbc max    2.1049999999966928E-005
+ usb  avg    2.1049999999966928E-005
+ uchk time   4.4901910000000322E-003  0.86634905744653490     
+ mltd time           0   0.0000000000000000        0.0000000000000000     
+ cdtp time           0   0.0000000000000000        0.0000000000000000     
+ axhm time           0   0.0000000000000000        0.0000000000000000     
+ advc time           0   0.0000000000000000        0.0000000000000000     
+ mxmf time   0.0000000000000000        0.0000000000000000     
+ adc3 time   0.0000000000000000        0.0000000000000000     
+ col2 time   0.0000000000000000        0.0000000000000000     
+ col3 time   0.0000000000000000        0.0000000000000000     
+ a2s2 time   0.0000000000000000        0.0000000000000000     
+ add2 time   0.0000000000000000        0.0000000000000000     
+ invc time   0.0000000000000000        0.0000000000000000     
+ tgop time          39   7.0123099999996885E-004  0.13529732162891506     
+ dadd time           0   0.0000000000000000        0.0000000000000000     
+ vdss time           2   1.2310000000459453E-006   2.3751232180468080E-004
+ vdss min    1.2310000000459453E-006
+ vdss max    1.2310000000459453E-006
+ vdss avg    1.2310000000459453E-006
+ dsum time          42   2.9349999999261911E-006   5.6628648615206288E-004
+ dsum min    2.9349999999261911E-006
+ dsum max    2.9349999999261911E-006
+ dsum avg    2.9349999999261911E-006
+ ddsl time           0   0.0000000000000000        0.0000000000000000     
+ 
 
-             Multidomain data exchange ...   3
-          0  done :: Multidomain data exchange (Stress)   4.6141E-05   5.3547E-04
-
-        0  0.0000E+00 Write checkpoint
-       FILE:/home/prabal/workstation/git_kth/full_fsi/neknektest/struc0.f00004                                                                  
-
-        0  0.0000E+00 done :: Write checkpoint
-                              file size =     503.E-05MB
-                              avg data-throughput =    24.3MB/s
-                              io-nodes =     1
-
+#  nid       tusbc       tdadd       tcrsl       tvdss       tdsum        tgop    qqq    F
+           0  2.1050E-05  0.0000E+00  0.0000E+00  1.2310E-06  2.9350E-06  7.0123E-04 qqq
   
-an error occured: dying ...
+run successful: dying ...
   
+  
+total elapsed time             :   2.21860E-02 sec
+total solver time w/o IO       :   4.79868E-03 sec
+time/timestep                  :   4.79868E-03 sec
+avg throughput per timestep    :   4.68879E+04 gridpts/CPUs
+total max memory usage         :   1.77398E-02 GB
+

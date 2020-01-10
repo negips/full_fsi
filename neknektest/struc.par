@@ -15,7 +15,7 @@ targetCFL = 0.5
 writeControl = timeStep #runTime
 writeInterval = 1000
 
-userParam01 = 1      # start time collecting statistics
+userParam01 = 1      # Structural solve
 userParam02 = 20     # writeInterval 1D statistics
 
 dealiasing = yes

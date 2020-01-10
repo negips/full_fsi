@@ -1112,6 +1112,12 @@ c-----------------------------------------------------------------------
 
         rhs(1) = beta
 
+        if (resid0.lt.1.0e-10) then
+          if (nid.eq.0) write(6,*) 'Initial residual too low'
+          call opzero(rv1,rv2,rv3)
+          return
+        endif          
+
 !       normalize
         call opcmult(rv1,rv2,rv3,1./beta)
 

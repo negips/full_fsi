@@ -18,7 +18,7 @@
  Number of processors:           2
  REAL    wdsize      :           8
  INTEGER wdsize      :           4
- Timer accuracy      :  5.08E-08
+ Timer accuracy      :  6.21E-08
   
  Reading /home/prabal/workstation/git_kth/full_fsi/neknektest/fluid.par                                                                      
 general = [(null)]
@@ -33,7 +33,7 @@ general:writeinterval = [1000]
 general:userparam01 = [0]
 general:userparam02 = [20]
 general:dealiasing = [yes]
-general:filtering = [hpfrt]
+general:filtering = [none]
 general:filterweight = [10.0]
 general:filtercutoffratio = [0.9]
 problemtype = [(null)]
@@ -61,11 +61,11 @@ velocity:advection = [yes]
  Max volume: 3 | Min volume: 3 | Avg volume: 3.000000
  Max elements: 26 | Min elements: 26 | Balance: 1.000000
   
- done :: partioning   0.21053E-03 sec
+ done :: partioning   0.20224E-03 sec
 
   preading mesh 
   preading bc for ifld           1
- done :: read .re2 file    0.34E-02 sec
+ done :: read .re2 file    0.33E-02 sec
 
  setup mesh topology
    Right-handed check complete for          52 elements. OK.
@@ -74,13 +74,13 @@ velocity:advection = [yes]
  done :: usrsetvert
 
 gs_setup: 15 unique labels shared
-   pairwise times (avg, min, max): 5.7205e-07 5.687e-07 5.754e-07
-   crystal router                : 5.355e-07 5.337e-07 5.373e-07
-   all reduce                    : 6.9105e-07 6.88e-07 6.941e-07
+   pairwise times (avg, min, max): 6.2e-07 6.137e-07 6.263e-07
+   crystal router                : 5.967e-07 5.966e-07 5.968e-07
+   all reduce                    : 7.003e-07 7e-07 7.006e-07
    used all_to_all method: crystal router
    handle bytes (avg, min, max): 8444 8444 8444
    buffer bytes (avg, min, max): 480 480 480
-   setupds time 3.8959E-04 seconds   0  8         817          52
+   setupds time 4.0332E-04 seconds   0  8         817          52
            4  max multiplicity
  done :: setup mesh topology
   
@@ -181,61 +181,61 @@ gs_setup: 15 unique labels shared
  done :: usrsetvert
 
 gs_setup: 3 unique labels shared
-   pairwise times (avg, min, max): 5.3915e-07 5.357e-07 5.426e-07
-   crystal router                : 5.489e-07 5.461e-07 5.517e-07
-   all reduce                    : 6.5615e-07 6.527e-07 6.596e-07
+   pairwise times (avg, min, max): 6.7295e-07 6.713e-07 6.746e-07
+   crystal router                : 6.7975e-07 6.782e-07 6.813e-07
+   all reduce                    : 7.37e-07 7.366e-07 7.374e-07
    used all_to_all method: pairwise
    handle bytes (avg, min, max): 1380 1380 1380
    buffer bytes (avg, min, max): 48 48 48
-   setupds time 1.9440E-04 seconds   1  2          73          52
+   setupds time 1.8608E-04 seconds   1  2          73          52
    setvert2d:   4         321         529         321         321
  call usrsetvert
  done :: usrsetvert
 
 gs_setup: 7 unique labels shared
-   pairwise times (avg, min, max): 5.5665e-07 5.507e-07 5.626e-07
-   crystal router                : 5.303e-07 5.292e-07 5.314e-07
-   all reduce                    : 6.505e-07 6.468e-07 6.542e-07
+   pairwise times (avg, min, max): 8.5165e-07 8.367e-07 8.666e-07
+   crystal router                : 7.939e-07 7.868e-07 8.01e-07
+   all reduce                    : 8.2105e-07 8.105e-07 8.316e-07
    used all_to_all method: crystal router
    handle bytes (avg, min, max): 3932 3932 3932
    buffer bytes (avg, min, max): 224 224 224
-   setupds time 2.8777E-04 seconds   2  4         321          52
+   setupds time 3.4936E-04 seconds   2  4         321          52
    setvert2d:   4         321         529         321         321
  call usrsetvert
  done :: usrsetvert
 
 gs_setup: 7 unique labels shared
-   pairwise times (avg, min, max): 5.487e-07 5.433e-07 5.541e-07
-   crystal router                : 5.4755e-07 5.417e-07 5.534e-07
-   all reduce                    : 6.507e-07 6.439e-07 6.575e-07
-   used all_to_all method: crystal router
-   handle bytes (avg, min, max): 3932 3932 3932
-   buffer bytes (avg, min, max): 224 224 224
-   setupds time 2.4735E-04 seconds   3  4         321          52
+   pairwise times (avg, min, max): 7.1345e-07 7.072e-07 7.197e-07
+   crystal router                : 8.0175e-07 8e-07 8.035e-07
+   all reduce                    : 8.0815e-07 7.993e-07 8.17e-07
+   used all_to_all method: pairwise
+   handle bytes (avg, min, max): 3444 3444 3444
+   buffer bytes (avg, min, max): 112 112 112
+   setupds time 3.1810E-04 seconds   3  4         321          52
    setvert2d:   6         569        1401         569         569
  call usrsetvert
  done :: usrsetvert
 
 gs_setup: 11 unique labels shared
-   pairwise times (avg, min, max): 5.451e-07 5.43e-07 5.472e-07
-   crystal router                : 5.475e-07 5.453e-07 5.497e-07
-   all reduce                    : 6.5675e-07 6.531e-07 6.604e-07
+   pairwise times (avg, min, max): 7.6715e-07 7.614e-07 7.729e-07
+   crystal router                : 8.091e-07 8.061e-07 8.121e-07
+   all reduce                    : 8.932e-07 8.782e-07 9.082e-07
    used all_to_all method: pairwise
    handle bytes (avg, min, max): 5508 5508 5508
    buffer bytes (avg, min, max): 176 176 176
-   setupds time 2.8409E-04 seconds   4  6         569          52
+   setupds time 4.8436E-04 seconds   4  6         569          52
  setup h1 coarse grid, nx_crs=           2
  call usrsetvert
  done :: usrsetvert
 
 gs_setup: 3 unique labels shared
-   pairwise times (avg, min, max): 5.32e-07 5.284e-07 5.356e-07
-   crystal router                : 5.1245e-07 5.118e-07 5.131e-07
-   all reduce                    : 6.1115e-07 6.083e-07 6.14e-07
+   pairwise times (avg, min, max): 7.7405e-07 7.628e-07 7.853e-07
+   crystal router                : 7.202e-07 7.181e-07 7.223e-07
+   all reduce                    : 8.762e-07 8.656e-07 8.868e-07
    used all_to_all method: crystal router
    handle bytes (avg, min, max): 1676 1676 1676
    buffer bytes (avg, min, max): 96 96 96
- done :: setup h1 coarse grid    5.5336999999999921E-004  sec
+ done :: setup h1 coarse grid    6.9414700000003382E-004  sec
   
  call usrdat3
  done :: usrdat3
@@ -244,54 +244,109 @@ gs_setup: 3 unique labels shared
  nekuic (1) for ifld            1
  call nekuic for vel  
  xyz min     0.0000       0.0000       0.0000    
- uvwpt min  0.36777E-04   0.0000       0.0000       0.0000       0.0000    
+ uvwpt min   1.0000       0.0000       0.0000       0.0000       0.0000    
  xyz max     6.2500       2.0000       0.0000    
- uvwpt max   2.0000      0.99951       0.0000       0.0000       0.0000    
+ uvwpt max   1.0000       0.0000       0.0000       0.0000       0.0000    
  done :: set initial conditions
   
              Multidomain data exchange ...   3
-          0  done :: Multidomain data exchange   7.9407E-05   8.1791E-05
+          0  done :: Multidomain data exchange   8.2130E-05   8.4732E-05
  call userchk
+ done :: userchk
 
-        0  0.0000E+00 Write checkpoint
+gridpoints unique/tot:          2689         3328
+  
+ Initialization successfully completed   0.16101E-01 sec
+
+Starting time loop ...
+
+     DT/DTCFL/DTFS/DTINIT   0.100E-02   0.000E+00   0.000E+00   0.100E-02
+ CFL, Ctarg!                  Infinity  0.50000000000000000     
+Step      1, t= 1.0000000E-03, DT= 1.0000000E-03, C=    Inf 0.0000E+00 0.0000E+00
+             Solving for fluid
+          1  Hmholtz VELX       1   1.5311E+00   1.0000E-02   1.0000E-08   1.0000E+03   F
+          1  Hmholtz VELX       2   3.2593E-02   1.0000E-02   1.0000E-08   1.0000E+03   F
+          1  Hmholtz VELX       3   3.5093E-03   1.0000E-02   1.0000E-08   1.0000E+03   F
+          1  Hmholtz VELX       4   6.2345E-04   1.0000E-02   1.0000E-08   1.0000E+03   F
+          1  Hmholtz VELX       5   5.5063E-05   1.0000E-02   1.0000E-08   1.0000E+03   F
+          1  Hmholtz VELX       6   4.2512E-06   1.0000E-02   1.0000E-08   1.0000E+03   F
+          1  Hmholtz VELX       7   3.2754E-07   1.0000E-02   1.0000E-08   1.0000E+03   F
+          1  Hmholtz VELX       8   4.0666E-08   1.0000E-02   1.0000E-08   1.0000E+03   F
+          1  Hmholtz VELX       9   7.0413E-09   1.0000E-02   1.0000E-08   1.0000E+03   F
+          1  Hmholtz VELX       8   7.0413E-09   1.5311E+00   1.0000E-08
+          1  U-PRES gmres       0   0.0000E+00   0.0000E+00   1.0000E-06   0.0000E+00   3.0606E-05
+          1  Fluid done  1.0000E-03  1.9189E-03
+             Multidomain data exchange ...   3
+          1  done :: Multidomain data exchange (Stress)   7.9497E-05   8.2683E-05
+             Multidomain data exchange ...   3
+          1  done :: Multidomain data exchange (Vel)   6.6564E-05   3.7458E-04
+
+        1  1.0000E-03 Write checkpoint
        FILE:/home/prabal/workstation/git_kth/full_fsi/neknektest/fluid0.f00001                                                                  
 
-        0  0.0000E+00 done :: Write checkpoint
+        1  1.0000E-03 done :: Write checkpoint
                               file size =     638.E-04MB
-                              avg data-throughput =   172.4MB/s
-                              io-nodes =     2
-
-             Multidomain data exchange ...   3
-          0  done :: Multidomain data exchange (Vel)   6.0410E-05   6.1730E-05
-
-        0  0.0000E+00 Write checkpoint
-       FILE:/home/prabal/workstation/git_kth/full_fsi/neknektest/fluid0.f00002                                                                  
-
-        0  0.0000E+00 done :: Write checkpoint
-                              file size =     638.E-04MB
-                              avg data-throughput =   200.0MB/s
+                              avg data-throughput =   137.1MB/s
                               io-nodes =     2
 
 
-        0  0.0000E+00 Write checkpoint
-       FILE:/home/prabal/workstation/git_kth/full_fsi/neknektest/fluid0.f00003                                                                  
+end of time-step loop
 
-        0  0.0000E+00 done :: Write checkpoint
-                              file size =     638.E-04MB
-                              avg data-throughput =   201.1MB/s
-                              io-nodes =     2
+ 
+runtime statistics:
+ init time   1.6101116999999950E-002   3.0340006855234978     
+ prep time           1   5.2353900000001730E-004   9.8652639124251068E-002
+ pres time           1   1.9698599999995459E-004   3.7118894238107568E-002
+ crsl time           0   0.0000000000000000        0.0000000000000000     
+ crsl min    0.0000000000000000     
+ crsl max    0.0000000000000000     
+ crsl avg    0.0000000000000000     
+ hmhz time           2   1.2004500000000196E-003  0.22620580441324373     
+ eslv time           1   6.5193000000074441E-005   1.2284589118354948E-002
+ makf time   1.5963970000000272E-003  0.30081575038351394     
+ makq time   0.0000000000000000        0.0000000000000000     
+ proj time   0.0000000000000000        0.0000000000000000     
+ usvp time           3   8.0070000000320718E-006   1.5087924327910932E-003
+ usfq time           0   2.1972700000005840E-004   4.1404075793511776E-002
+ usbc time           1   9.2967000000054867E-005   1.7518159872462909E-002
+ usbc min    9.2967000000054867E-005
+ usbc max    1.4199300000006243E-004
+ usb  avg    1.1748000000005865E-004
+ uchk time   6.6787600000006719E-004  0.12585066252514665     
+ mltd time           2   4.7137999999891100E-005   8.8824101032168572E-003
+ cdtp time           4   1.1504699999997925E-004   2.1678786438689937E-002
+ axhm time          16   9.4037800000024152E-004  0.17719935186185887     
+ advc time           2   1.3002349999999829E-003  0.24500870848535575     
+ mxmf time   0.0000000000000000        0.0000000000000000     
+ adc3 time   0.0000000000000000        0.0000000000000000     
+ col2 time   0.0000000000000000        0.0000000000000000     
+ col3 time   0.0000000000000000        0.0000000000000000     
+ a2s2 time   0.0000000000000000        0.0000000000000000     
+ add2 time   0.0000000000000000        0.0000000000000000     
+ invc time   0.0000000000000000        0.0000000000000000     
+ tgop time          79   1.2974699999990236E-004   2.4448768799352386E-002
+ dadd time           0   0.0000000000000000        0.0000000000000000     
+ vdss time           2   5.7300000000370943E-006   1.0797278181484081E-003
+ vdss min    5.7300000000370943E-006
+ vdss max    2.6129999999957576E-005
+ vdss avg    1.5929999999997335E-005
+ dsum time          58   7.8140999999809502E-005   1.4724434805791078E-002
+ dsum min    7.8140999999809502E-005
+ dsum max    5.2502800000009398E-004
+ dsum avg    3.0158449999995174E-004
+ ddsl time           0   0.0000000000000000        0.0000000000000000     
+ 
 
-             Multidomain data exchange ...   3
-          0  done :: Multidomain data exchange (Stress)   5.2971E-05   5.4235E-05
-
-        0  0.0000E+00 Write checkpoint
-       FILE:/home/prabal/workstation/git_kth/full_fsi/neknektest/fluid0.f00004                                                                  
-
-        0  0.0000E+00 done :: Write checkpoint
-                              file size =     638.E-04MB
-                              avg data-throughput =   170.9MB/s
-                              io-nodes =     2
-
+#  nid       tusbc       tdadd       tcrsl       tvdss       tdsum        tgop    qqq    F
+           0  9.2967E-05  0.0000E+00  0.0000E+00  5.7300E-06  7.8141E-05  1.2975E-04 qqq
+           1  1.4199E-04  0.0000E+00  0.0000E+00  2.6130E-05  5.2503E-04  1.3782E-03 qqq
   
-an error occured: dying ...
+run successful: dying ...
   
+  
+total elapsed time             :   2.24502E-02 sec
+total solver time w/o IO       :   4.78325E-03 sec
+time/timestep                  :   4.78325E-03 sec
+avg throughput per timestep    :   2.81085E+05 gridpts/CPUs
+total max memory usage         :   3.75767E-02 GB
+

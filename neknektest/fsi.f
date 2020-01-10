@@ -75,9 +75,9 @@ c -----------------------------------------------------------------------
 
       amp = 0.0
       if (fsi_ifstruct) then
-        ux  = 0.1 + 0*cos(x)
+        ux  = 0.0 + 0*cos(x)
       else
-        ux = 0.0 + amp*cos(x)
+        ux = 1.0 + amp*cos(x)
       endif  
      
       uy = amp*sin(y)
@@ -166,42 +166,11 @@ c-----------------------------------------------------------------------
       real scale
 
 
-      call outpost(vx,vy,vz,pr,t,'  ')
+      fsi_iftran = .true. 
 
-      call fsi_neknek_velex
-      igeom = 2
-      ifield = 1
-      call bcdirvc(vx,vy,vz,v1mask,v2mask,v3mask)
+      call fsi_coupling
 
-      call outpost(vx,vy,vz,pr,t,'  ')
 
-      nt = nx1*ny1*nz1*nelt
-
-      scale = 1.
-      if (fsi_iffluid) then
-        call fluid_forces(struct_ssx,struct_ssy,struct_ssz,
-     $                    vx,vy,vz,pr,scale)
-      else
-        call opzero(struct_ssx,struct_ssy,struct_ssz)
-      endif
-
-      call outpost(struct_ssx,struct_ssy,struct_ssz,pr,t,'  ')
-
-      call fsi_neknek_stressex
-
-      call outpost(struct_ssx,struct_ssy,struct_ssz,pr,t,'  ')
-     
-      call exitt
-
-      if (istep.gt.0) then
-
-        fsi_iftran = .true. 
-
-        call fsi_coupling
-
-        call exitt
-
-      endif        
       
       return
       end

@@ -15,11 +15,11 @@ targetCFL = 0.5
 writeControl = timeStep #runTime
 writeInterval = 1000
 
-userParam01 = 0      # start time collecting statistics
+userParam01 = 0      # Fluid solve
 userParam02 = 20     # writeInterval 1D statistics
 
 dealiasing = yes
-filtering = hpfrt #hpfrt, none, explicit
+filtering = none #hpfrt, none, explicit
 filterWeight = 10.0
 filterCutoffRatio = 0.9
 
