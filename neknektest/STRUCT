@@ -27,18 +27,26 @@
       real vely(lx1,ly1,lz1,lelv)
       real velz(lx1,ly1,lz1,lelv)
 
+      common /struct_vel/ velx,vely,velz
+
 !     accelerations      
       real accx(lx1,ly1,lz1,lelv)
       real accy(lx1,ly1,lz1,lelv)
       real accz(lx1,ly1,lz1,lelv)
 
-      real struct_damp(lx1,ly1,lz1,lelv)     ! Damping coefficient
-                                             ! Analogue of vtrans
-
-      common /struct_vel/ velx,vely,velz
       common /struct_acc/ accx,accy,accz
 
+
+      real struct_damp(lx1,ly1,lz1,lelv)     ! Damping coefficient
+                                             ! Analogue of vtrans
       common /struct_flds/ struct_damp
+
+!     Stress field     
+      real struct_ssx(lx1,ly1,lz1,lelv)
+      real struct_ssy(lx1,ly1,lz1,lelv)
+      real struct_ssz(lx1,ly1,lz1,lelv)
+      common /struct_ss/ struct_ssx,struct_ssy,struct_ssz
+
 
 !     Krylov field
       integer struct_nkryl

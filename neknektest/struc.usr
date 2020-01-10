@@ -67,33 +67,17 @@ c -----------------------------------------------------------------------
 
       real amp, ran
       
-      amp = 0.0
 
-      ran = 3.e4*(ieg+X*sin(Y)+Z*cos(Y))
-     $     + 4.7e2*ix*iy*iz - 1.5e3*ix*iy + .5e5*ix
-      ran = 6.e3*sin(ran)
-      ran = 3.e3*sin(ran)
-      ran = cos(ran)
-
+      amp = 1.0
       if (fsi_ifstruct) then
-        ux = 0.1 + ran*amp
+        ux  = 0.1 + 0*cos(x)
       else
-        ux = 1.0 + ran*amp
+        ux = 1.0 + amp*cos(x)
       endif  
      
-      ran = (2+ran)*1.e4*(ieg+Y*sin(Z)+X*cos(Z))
-     $     + 1.5e3*ix*iy*iz - 2.5e3*ix*iy + 8.9e4*ix
-      ran = 2.e3*sin(ran)
-      ran = 7.e3*sin(ran)
-      ran = cos(ran)
-      uy = ran*amp
+      uy = amp*sin(y)
       
-      ran = (4+ran)*5.1e4*(ieg+Z*sin(X)+Y*cos(X))
-     $     + 4.6e3*ix*iy*iz - 2.9e4*ix*iy + 3.7e3*ix
-      ran = 9.e3*sin(ran)
-      ran = 4.e3*sin(ran)
-      ran = cos(ran)
-      uz = ran*amp
+      uz = 0.
 
       return
       end
@@ -170,6 +154,8 @@ c-----------------------------------------------------------------------
       integer len2
       integer i,nt
 
+      real scale
+
       call outpost(vx,vy,vz,pr,t,'  ')
 
       call fsi_neknek_velex
@@ -180,12 +166,21 @@ c-----------------------------------------------------------------------
       call outpost(vx,vy,vz,pr,t,'  ')
 
       nt = nx1*ny1*nz1*nelt
-      do i=1,nt
-        vy(i,1,1,1)=imask(i,1,1,1)+0.
-      enddo  
 
-      call outpost(v1mask,vy,v3mask,pr,t,'  ')
+      scale = 1.
+      if (fsi_iffluid) then
+        call fluid_forces(struct_ssx,struct_ssy,struct_ssz,
+     $                    vx,vy,vz,pr,scale)
+      else
+        call opzero(struct_ssx,struct_ssy,struct_ssz)
+      endif
 
+      call outpost(struct_ssx,struct_ssy,struct_ssz,pr,t,'  ')
+
+      call fsi_neknek_stressex
+
+      call outpost(struct_ssx,struct_ssy,struct_ssz,pr,t,'  ')
+     
       call exitt
 
       if (istep.gt.0) then

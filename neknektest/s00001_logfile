@@ -18,7 +18,7 @@
  Number of processors:           1
  REAL    wdsize      :           8
  INTEGER wdsize      :           4
- Timer accuracy      :  5.10E-08
+ Timer accuracy      :  4.60E-08
   
  Reading /home/prabal/workstation/git_kth/full_fsi/neknektest/struc.par                                                                      
 general = [(null)]
@@ -57,11 +57,11 @@ velocity:advection = [yes]
  partioning elements to MPI ranks
  Reading /home/prabal/workstation/git_kth/full_fsi/neknektest/struc.ma2                                                                      
   
- done :: partioning   0.62998E-04 sec
+ done :: partioning   0.61224E-04 sec
 
   preading mesh 
   preading bc for ifld           1
- done :: read .re2 file    0.23E-02 sec
+ done :: read .re2 file    0.22E-02 sec
 
  setup mesh topology
    Right-handed check complete for           4 elements. OK.
@@ -72,7 +72,7 @@ velocity:advection = [yes]
 gs_setup: 0 unique labels shared
    handle bytes (avg, min, max): 932 932 932
    buffer bytes (avg, min, max): 0 0 0
-   setupds time 9.4980E-05 seconds   0  8          81           4
+   setupds time 8.8292E-05 seconds   0  8          81           4
            4  max multiplicity
  done :: setup mesh topology
   
@@ -175,7 +175,7 @@ gs_setup: 0 unique labels shared
 gs_setup: 0 unique labels shared
    handle bytes (avg, min, max): 356 356 356
    buffer bytes (avg, min, max): 0 0 0
-   setupds time 4.3458E-05 seconds   1  2           9           4
+   setupds time 4.6445E-05 seconds   1  2           9           4
    setvert2d:   4          33          49          33          33
  call usrsetvert
  done :: usrsetvert
@@ -183,7 +183,7 @@ gs_setup: 0 unique labels shared
 gs_setup: 0 unique labels shared
    handle bytes (avg, min, max): 548 548 548
    buffer bytes (avg, min, max): 0 0 0
-   setupds time 5.4980E-05 seconds   2  4          33           4
+   setupds time 6.9482E-05 seconds   2  4          33           4
    setvert2d:   4          33          49          33          33
  call usrsetvert
  done :: usrsetvert
@@ -191,7 +191,7 @@ gs_setup: 0 unique labels shared
 gs_setup: 0 unique labels shared
    handle bytes (avg, min, max): 548 548 548
    buffer bytes (avg, min, max): 0 0 0
-   setupds time 4.3221E-05 seconds   3  4          33           4
+   setupds time 4.8498E-05 seconds   3  4          33           4
    setvert2d:   6          57         121          57          57
  call usrsetvert
  done :: usrsetvert
@@ -199,7 +199,7 @@ gs_setup: 0 unique labels shared
 gs_setup: 0 unique labels shared
    handle bytes (avg, min, max): 740 740 740
    buffer bytes (avg, min, max): 0 0 0
-   setupds time 5.1522E-05 seconds   4  6          57           4
+   setupds time 5.8083E-05 seconds   4  6          57           4
  setup h1 coarse grid, nx_crs=           2
  call usrsetvert
  done :: usrsetvert
@@ -207,7 +207,7 @@ gs_setup: 0 unique labels shared
 gs_setup: 0 unique labels shared
    handle bytes (avg, min, max): 356 356 356
    buffer bytes (avg, min, max): 0 0 0
- done :: setup h1 coarse grid    1.3508199999999991E-004  sec
+ done :: setup h1 coarse grid    1.5658699999999970E-004  sec
   
  call usrdat3
  done :: usrdat3
@@ -216,13 +216,13 @@ gs_setup: 0 unique labels shared
  nekuic (1) for ifld            1
  call nekuic for vel  
  xyz min     3.0000       0.0000       0.0000    
- uvwpt min  0.10000      -0.0000      -0.0000       0.0000       0.0000    
+ uvwpt min  0.10000       0.0000       0.0000       0.0000       0.0000    
  xyz max     3.2500       1.0000       0.0000    
- uvwpt max  0.10000      -0.0000      -0.0000       0.0000       0.0000    
+ uvwpt max  0.10000      0.84147       0.0000       0.0000       0.0000    
  done :: set initial conditions
   
              Multidomain data exchange ...   3
-          0  done :: Multidomain data exchange   7.0434E-05   3.7213E-03
+          0  done :: Multidomain data exchange   7.3849E-05   5.0884E-03
  call userchk
 
         0  0.0000E+00 Write checkpoint
@@ -230,18 +230,18 @@ gs_setup: 0 unique labels shared
 
         0  0.0000E+00 done :: Write checkpoint
                               file size =     503.E-05MB
-                              avg data-throughput =    10.9MB/s
+                              avg data-throughput =    17.4MB/s
                               io-nodes =     1
 
              Multidomain data exchange ...   3
-          0  done :: Multidomain data exchange   7.0138E-05   2.2106E-04
+          0  done :: Multidomain data exchange (Vel)   5.7628E-05   1.8955E-04
 
         0  0.0000E+00 Write checkpoint
        FILE:/home/prabal/workstation/git_kth/full_fsi/neknektest/struc0.f00002                                                                  
 
         0  0.0000E+00 done :: Write checkpoint
                               file size =     503.E-05MB
-                              avg data-throughput =    15.5MB/s
+                              avg data-throughput =    26.6MB/s
                               io-nodes =     1
 
 
@@ -250,7 +250,18 @@ gs_setup: 0 unique labels shared
 
         0  0.0000E+00 done :: Write checkpoint
                               file size =     503.E-05MB
-                              avg data-throughput =    17.1MB/s
+                              avg data-throughput =    27.8MB/s
+                              io-nodes =     1
+
+             Multidomain data exchange ...   3
+          0  done :: Multidomain data exchange (Stress)   4.6141E-05   5.3547E-04
+
+        0  0.0000E+00 Write checkpoint
+       FILE:/home/prabal/workstation/git_kth/full_fsi/neknektest/struc0.f00004                                                                  
+
+        0  0.0000E+00 done :: Write checkpoint
+                              file size =     503.E-05MB
+                              avg data-throughput =    24.3MB/s
                               io-nodes =     1
 
   

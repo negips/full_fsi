@@ -18,7 +18,7 @@
  Number of processors:           2
  REAL    wdsize      :           8
  INTEGER wdsize      :           4
- Timer accuracy      :  7.85E-08
+ Timer accuracy      :  5.08E-08
   
  Reading /home/prabal/workstation/git_kth/full_fsi/neknektest/fluid.par                                                                      
 general = [(null)]
@@ -61,11 +61,11 @@ velocity:advection = [yes]
  Max volume: 3 | Min volume: 3 | Avg volume: 3.000000
  Max elements: 26 | Min elements: 26 | Balance: 1.000000
   
- done :: partioning   0.17688E-03 sec
+ done :: partioning   0.21053E-03 sec
 
   preading mesh 
   preading bc for ifld           1
- done :: read .re2 file    0.23E-02 sec
+ done :: read .re2 file    0.34E-02 sec
 
  setup mesh topology
    Right-handed check complete for          52 elements. OK.
@@ -74,13 +74,13 @@ velocity:advection = [yes]
  done :: usrsetvert
 
 gs_setup: 15 unique labels shared
-   pairwise times (avg, min, max): 5.1605e-07 5.143e-07 5.178e-07
-   crystal router                : 4.8925e-07 4.864e-07 4.921e-07
-   all reduce                    : 5.542e-07 5.535e-07 5.549e-07
+   pairwise times (avg, min, max): 5.7205e-07 5.687e-07 5.754e-07
+   crystal router                : 5.355e-07 5.337e-07 5.373e-07
+   all reduce                    : 6.9105e-07 6.88e-07 6.941e-07
    used all_to_all method: crystal router
    handle bytes (avg, min, max): 8444 8444 8444
    buffer bytes (avg, min, max): 480 480 480
-   setupds time 3.2597E-04 seconds   0  8         817          52
+   setupds time 3.8959E-04 seconds   0  8         817          52
            4  max multiplicity
  done :: setup mesh topology
   
@@ -181,61 +181,61 @@ gs_setup: 15 unique labels shared
  done :: usrsetvert
 
 gs_setup: 3 unique labels shared
-   pairwise times (avg, min, max): 4.035e-07 4.026e-07 4.044e-07
-   crystal router                : 4.2065e-07 4.202e-07 4.211e-07
-   all reduce                    : 4.65e-07 4.648e-07 4.652e-07
+   pairwise times (avg, min, max): 5.3915e-07 5.357e-07 5.426e-07
+   crystal router                : 5.489e-07 5.461e-07 5.517e-07
+   all reduce                    : 6.5615e-07 6.527e-07 6.596e-07
    used all_to_all method: pairwise
    handle bytes (avg, min, max): 1380 1380 1380
    buffer bytes (avg, min, max): 48 48 48
-   setupds time 1.1916E-04 seconds   1  2          73          52
+   setupds time 1.9440E-04 seconds   1  2          73          52
    setvert2d:   4         321         529         321         321
  call usrsetvert
  done :: usrsetvert
 
 gs_setup: 7 unique labels shared
-   pairwise times (avg, min, max): 4.134e-07 4.087e-07 4.181e-07
-   crystal router                : 4.053e-07 4.025e-07 4.081e-07
-   all reduce                    : 4.754e-07 4.717e-07 4.791e-07
+   pairwise times (avg, min, max): 5.5665e-07 5.507e-07 5.626e-07
+   crystal router                : 5.303e-07 5.292e-07 5.314e-07
+   all reduce                    : 6.505e-07 6.468e-07 6.542e-07
    used all_to_all method: crystal router
    handle bytes (avg, min, max): 3932 3932 3932
    buffer bytes (avg, min, max): 224 224 224
-   setupds time 1.9199E-04 seconds   2  4         321          52
+   setupds time 2.8777E-04 seconds   2  4         321          52
    setvert2d:   4         321         529         321         321
  call usrsetvert
  done :: usrsetvert
 
 gs_setup: 7 unique labels shared
-   pairwise times (avg, min, max): 4.3805e-07 4.316e-07 4.445e-07
-   crystal router                : 4.071e-07 4.046e-07 4.096e-07
-   all reduce                    : 4.76e-07 4.74e-07 4.78e-07
+   pairwise times (avg, min, max): 5.487e-07 5.433e-07 5.541e-07
+   crystal router                : 5.4755e-07 5.417e-07 5.534e-07
+   all reduce                    : 6.507e-07 6.439e-07 6.575e-07
    used all_to_all method: crystal router
    handle bytes (avg, min, max): 3932 3932 3932
    buffer bytes (avg, min, max): 224 224 224
-   setupds time 1.6689E-04 seconds   3  4         321          52
+   setupds time 2.4735E-04 seconds   3  4         321          52
    setvert2d:   6         569        1401         569         569
  call usrsetvert
  done :: usrsetvert
 
 gs_setup: 11 unique labels shared
-   pairwise times (avg, min, max): 4.2775e-07 4.262e-07 4.293e-07
-   crystal router                : 4.7235e-07 4.658e-07 4.789e-07
-   all reduce                    : 4.8815e-07 4.838e-07 4.925e-07
+   pairwise times (avg, min, max): 5.451e-07 5.43e-07 5.472e-07
+   crystal router                : 5.475e-07 5.453e-07 5.497e-07
+   all reduce                    : 6.5675e-07 6.531e-07 6.604e-07
    used all_to_all method: pairwise
    handle bytes (avg, min, max): 5508 5508 5508
    buffer bytes (avg, min, max): 176 176 176
-   setupds time 1.9736E-04 seconds   4  6         569          52
+   setupds time 2.8409E-04 seconds   4  6         569          52
  setup h1 coarse grid, nx_crs=           2
  call usrsetvert
  done :: usrsetvert
 
 gs_setup: 3 unique labels shared
-   pairwise times (avg, min, max): 4.22e-07 4.215e-07 4.225e-07
-   crystal router                : 4.052e-07 3.993e-07 4.111e-07
-   all reduce                    : 4.6415e-07 4.615e-07 4.668e-07
+   pairwise times (avg, min, max): 5.32e-07 5.284e-07 5.356e-07
+   crystal router                : 5.1245e-07 5.118e-07 5.131e-07
+   all reduce                    : 6.1115e-07 6.083e-07 6.14e-07
    used all_to_all method: crystal router
    handle bytes (avg, min, max): 1676 1676 1676
    buffer bytes (avg, min, max): 96 96 96
- done :: setup h1 coarse grid    3.6191200000000069E-004  sec
+ done :: setup h1 coarse grid    5.5336999999999921E-004  sec
   
  call usrdat3
  done :: usrdat3
@@ -244,13 +244,13 @@ gs_setup: 3 unique labels shared
  nekuic (1) for ifld            1
  call nekuic for vel  
  xyz min     0.0000       0.0000       0.0000    
- uvwpt min   1.0000       0.0000       0.0000       0.0000       0.0000    
+ uvwpt min  0.36777E-04   0.0000       0.0000       0.0000       0.0000    
  xyz max     6.2500       2.0000       0.0000    
- uvwpt max   1.0000       0.0000       0.0000       0.0000       0.0000    
+ uvwpt max   2.0000      0.99951       0.0000       0.0000       0.0000    
  done :: set initial conditions
   
              Multidomain data exchange ...   3
-          0  done :: Multidomain data exchange   7.4479E-05   7.6516E-05
+          0  done :: Multidomain data exchange   7.9407E-05   8.1791E-05
  call userchk
 
         0  0.0000E+00 Write checkpoint
@@ -258,18 +258,18 @@ gs_setup: 3 unique labels shared
 
         0  0.0000E+00 done :: Write checkpoint
                               file size =     638.E-04MB
-                              avg data-throughput =   109.2MB/s
+                              avg data-throughput =   172.4MB/s
                               io-nodes =     2
 
              Multidomain data exchange ...   3
-          0  done :: Multidomain data exchange   7.4641E-05   7.6370E-05
+          0  done :: Multidomain data exchange (Vel)   6.0410E-05   6.1730E-05
 
         0  0.0000E+00 Write checkpoint
        FILE:/home/prabal/workstation/git_kth/full_fsi/neknektest/fluid0.f00002                                                                  
 
         0  0.0000E+00 done :: Write checkpoint
                               file size =     638.E-04MB
-                              avg data-throughput =   158.7MB/s
+                              avg data-throughput =   200.0MB/s
                               io-nodes =     2
 
 
@@ -278,7 +278,18 @@ gs_setup: 3 unique labels shared
 
         0  0.0000E+00 done :: Write checkpoint
                               file size =     638.E-04MB
-                              avg data-throughput =   168.0MB/s
+                              avg data-throughput =   201.1MB/s
+                              io-nodes =     2
+
+             Multidomain data exchange ...   3
+          0  done :: Multidomain data exchange (Stress)   5.2971E-05   5.4235E-05
+
+        0  0.0000E+00 Write checkpoint
+       FILE:/home/prabal/workstation/git_kth/full_fsi/neknektest/fluid0.f00004                                                                  
+
+        0  0.0000E+00 done :: Write checkpoint
+                              file size =     638.E-04MB
+                              avg data-throughput =   170.9MB/s
                               io-nodes =     2
 
   
