@@ -1,0 +1,77 @@
+!     Variable declarions for Structural solutions
+
+
+      logical fsi_ifstruct,fsi_iffluid,fsi_iftran
+
+      common /struct_sl/ fsi_ifstruct,fsi_iffluid,fsi_iftran
+
+
+      real newm_beta,newm_gamma
+      parameter (newm_beta  = 0.25)
+      parameter (newm_gamma = 0.5)
+
+!     Structural parameters
+
+      real struct_lambda
+      real struct_nu
+      real struct_young
+
+      common /struct_params/ struct_lambda,struct_nu,struct_young
+
+!     Fields
+!     Using vx,vy,vz as displacement fields
+!     and vxlag,vylag,vzlag as lag fields      
+
+!     velocities      
+      real velx(lx1,ly1,lz1,lelv)
+      real vely(lx1,ly1,lz1,lelv)
+      real velz(lx1,ly1,lz1,lelv)
+
+!     accelerations      
+      real accx(lx1,ly1,lz1,lelv)
+      real accy(lx1,ly1,lz1,lelv)
+      real accz(lx1,ly1,lz1,lelv)
+
+      real struct_damp(lx1,ly1,lz1,lelv)     ! Damping coefficient
+                                             ! Analogue of vtrans
+
+      common /struct_vel/ velx,vely,velz
+      common /struct_acc/ accx,accy,accz
+
+      common /struct_flds/ struct_damp
+
+!     Krylov field
+      integer struct_nkryl
+      parameter (struct_nkryl=40)
+      real struct_krylv(lx1*ly1*lz1*lelv,ldim,struct_nkryl+1)
+      real struct_krylx(lx1*ly1*lz1*lelv,ldim,struct_nkryl+1)
+      real struct_hessen(struct_nkryl+1,struct_nkryl)
+      real struct_Q(struct_nkryl+1,struct_nkryl+1)
+      real struct_R(struct_nkryl+1,struct_nkryl)
+      real struct_GivensC(struct_nkryl+1)
+      real struct_GivensS(struct_nkryl+1)
+
+      common /struct_gmres/ struct_krylv,struct_krylx,
+     $                      struct_hessen,struct_Q,struct_R,
+     $                      struct_GivensC,struct_GivensS 
+
+
+!     test arrays
+      real ts1(lx1*ly1*lz1*lelv)
+      real ts2(lx1*ly1*lz1*lelv)
+      real ts3(lx1*ly1*lz1*lelv)
+      real ts4(lx1*ly1*lz1*lelv)
+      real ts5(lx1*ly1*lz1*lelv)
+      real ts6(lx1*ly1*lz1*lelv)
+
+      common /struct_testing/ ts1,ts2,ts3,ts4,ts5,ts6
+
+
+
+
+
+
+
+
+
+

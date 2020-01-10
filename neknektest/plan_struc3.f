@@ -14,6 +14,9 @@
       include 'INPUT'         ! ifrich
       include 'CTIMER'
       include 'STRUCT'
+      include 'FSI'           
+      include 'MVGEOM'        ! wx
+      include 'TSTEP'
 
       integer itr
       logical ifconverged
@@ -23,10 +26,13 @@
 
 !     Just initialization for the fluid      
       if (istep.eq.0) then
+
         if (fsi_iffluid) then            
-          call opzero(ext_vx,ext_vy,ext_vz)
+          call opzero(ext_vx,ext_vy,ext_vz) 
           call opzero(wx,wy,wz)
         else
+          call opzero(velx,vely,velz)
+          call opzero(accx,accy,accz)
           continue
         endif  
 
@@ -49,7 +55,7 @@
 
 !         Get new interface velocity          
 
-!         Stokes correction step            
+!         Stokes correction step          
 !          call stokes_solve()
 
 !         Send fluid stresses to structure
@@ -1527,7 +1533,6 @@ c------------------------------------------------------------------------
       return
       end subroutine update_fields
 !---------------------------------------------------------------------- 
-
 
 
 

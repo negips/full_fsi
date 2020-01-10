@@ -1,0 +1,51 @@
+!     Include file for Fluid structure interaction problem
+
+!     Stokes' solution arrays
+!-------------------------------------------------- 
+      REAL SC_VX(LX1,LY1,LZ1,LELV)  
+      REAL SC_VY(LX1,LY1,LZ1,LELV)
+      REAL SC_VZ(LX1,LY1,LZ1,LELV)
+      REAL SC_PR(LX2,LY2,LZ2,LELV)
+
+      REAL EXT_VX(LX1,LY1,LZ1,LELV)  
+      REAL EXT_VY(LX1,LY1,LZ1,LELV)
+      REAL EXT_VZ(LX1,LY1,LZ1,LELV)
+     
+      common /FSI_SOLN/ SC_VX,SC_VY,SC_VZ,SC_PR,
+     $                  EXT_VX,EXT_VY,EXT_VZ
+ 
+
+!!     Mask arrays
+!!-------------------------------------------------- 
+!      REAL SC_V1MASK(LX1,LY1,LZ1,LELV)
+!      REAL SC_V2MASK(LX1,LY1,LZ1,LELV)
+!      REAL SC_V3MASK(LX1,LY1,LZ1,LELV)
+!      REAL FSI_MASK(LX1,LY1,LZ1,LELV)           ! Mask for Arnoldi
+!
+!      COMMON /FSI_MASK/ SC_V1MASK,SC_V2MASK,SC_V3MASK,FSI_MASK
+
+!     Projection arrays. Only Pressure projection for now
+!-------------------------------------------------- 
+      INTEGER SC_MPROJ
+      PARAMETER (SC_MPROJ = 3)           ! No of saved projections
+
+      REAL SC_PRPROJ(LX2,LY2,LZ2,LELV,SC_MPROJ)
+
+      REAL PBAR(LX2*LY2*LZ2*LELV)
+      REAL PNEW(LX2*LY2*LZ2*LELV)
+      REAL PBRR(LX2*LY2*LZ2*LELV)
+      REAL ALPHA(SC_MPROJ),WORK(SC_MPROJ)
+      REAL ALPHAN,DTLAST
+      INTEGER NPREV,MPREV
+
+      COMMON /FSI_PROJ/ SC_PRPROJ
+
+      COMMON /FSI_ORTHOX/ PBAR,PNEW,PBRR
+      COMMON /FSI_ORTHOS/ ALPHA,WORK,ALPHAN,DTLAST
+      COMMON /FSI_ORTHOI/ NPREV,MPREV
+
+
+
+
+
+

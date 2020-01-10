@@ -1,0 +1,6 @@
+NEK_SOURCE_ROOT=/home/prabal/workstation/git_kth/full_fsi/Nek5000_FSI
+FC=mpif77
+FFLAGS=-std=legacy -g -fbacktrace -std=legacy -fdefault-real-8 -fdefault-double-8 -cpp
+CC=mpicc
+CFLAGS=
+PPLIST= MPI UNDERSCORE TIMER

@@ -100,6 +100,7 @@ c     Boundary conditions are changed back to 'v' or 't'.
       nflag=nelt*nfaces
       call izero(intflag,nflag)
 
+
       do j=1,nfield
          nel = nelfld(j)
       do e=1,nel
@@ -112,6 +113,10 @@ c     Boundary conditions are changed back to 'v' or 't'.
 c            if (cb.eq.'inp') cbc(f,e,ifield)='on ' ! Pressure
 c            if (cb.eq.'inp') cbc(f,e,ifield)='o  ' ! Pressure
             if (cb.eq.'inp') cbc(f,e,j)='o  ' ! Pressure
+
+!           mod_structural            
+            if (cb.eq.'ins') cbc(f,e,j)='s  ' ! traction
+           
          endif
       enddo
       enddo
@@ -254,7 +259,7 @@ c     Get diamter of the domain
       mn_glob = glmin_ms(xm1,lx1*ly1*lz1*nelt)
       dx1 = mx_glob-mn_glob
 
-      dxf = 10.+dx1
+      dxf = 10.+dx1            ! why do we do this?
       dyf = 0.
       dzf = 0.
 
@@ -272,6 +277,7 @@ c     Setup findpts
       nzf     = 2*lz1
       bb_t    = 0.01 ! relative size to expand bounding boxes by
 
+!     why istep.gt.1?      
       if (istep.gt.1) call fgslib_findpts_free(inth_multi2)
       call fgslib_findpts_setup(inth_multi2,mpi_comm_world,npall,ldim,
      &                          xm1,ym1,zm1,lx1,ly1,lz1,
@@ -453,12 +459,12 @@ c     Interpolate using findpts_eval
          
 c     Now we can transfer this information to valint array from which
 c     the information will go to the boundary points
-       do i=1,npoints_nn
+      do i=1,npoints_nn
         idx = iList(1,i)
         do ifld=1,nfld_neknek
           valint(idx,1,1,1,ifld)=fieldout(i,ifld)
         enddo
-       enddo
+      enddo
 
       call nekgsync()
       etime = dnekclock() - etime1

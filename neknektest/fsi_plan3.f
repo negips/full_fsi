@@ -51,9 +51,9 @@ C
       tolp_old = param(21)
 
 
-      if (nio.eq.0) write(6,11) 'Solving Stokes'' step', fsi_timea,
-     $       fsi_timei
-   11 format(A21,1x,2(E12.5E2,1x))
+!      if (nio.eq.0) write(6,11) 'Solving Stokes'' step', fsi_timea,
+!     $       fsi_timei
+!   11 format(A21,1x,2(E12.5E2,1x))
 
       call opzero(sc_vx,sc_vy,sc_vz)
       call rzero(sc_pr,nx2*ny2*nz2*nelt)
