@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      SUBROUTINE SETLOG
+      SUBROUTINE SETLOG(ifecho)
 C                                                                     
 C     Subroutine to initialize logical flags
 C                                                                     
@@ -9,6 +9,9 @@ C
       INCLUDE 'TSTEP'
       INCLUDE 'CTIMER'
       INCLUDE 'ADJOINT'
+
+      logical ifecho
+
       COMMON  /CPRINT/ IFPRINT
 C
       common  /nekcb/ cb
@@ -98,7 +101,7 @@ C
          CALL GLLOG(IFNONL(IFIELD),.TRUE.)
   400 CONTINUE
 C
-      IF (NIO.EQ.0) THEN
+      IF (NIO.EQ.0 .AND. ifecho) THEN
          WRITE (6,*) 'IFTRAN    =',IFTRAN
          WRITE (6,*) 'IFFLOW    =',IFFLOW
          WRITE (6,*) 'IFHEAT    =',IFHEAT
@@ -383,7 +386,6 @@ C
            CALL RONE(V1MASK,NTOT)
            CALL RONE(V2MASK,NTOT)
            CALL RONE(V3MASK,NTOT)
-           CALL RONE( OMASK,NTOT)
 C
            DO 100 IEL=1,NELV
            DO 100 IFACE=1,NFACES
@@ -424,14 +426,22 @@ C
          ENDIF
          IF (CB.EQ.'A  ') THEN
              CALL FACEV (V2MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
-             CALL FACEV ( OMASK,IEL,IFACE,0.0,lx1,ly1,lz1)
          ENDIF
   100    CONTINUE
 
-         CALL DSOP  ( OMASK,'MUL',lx1,ly1,lz1)
          call opdsop(v1mask,v2mask,v3mask,'MUL') ! no rotation for mul
 
        ENDIF
+
+       CALL RONE(OMASK,NTOT)
+       DO 200 IEL=1,NELV
+       DO 200 IFACE=1,NFACES
+          CB =CBC(IFACE,IEL,IFIELD)
+          IF (CB.EQ.'A  ') THEN
+              CALL FACEV (OMASK,IEL,IFACE,0.0,lx1,ly1,lz1)
+          ENDIF
+ 200   CONTINUE
+       CALL DSOP(OMASK,'MUL',lx1,ly1,lz1)
 C
       ENDIF
 C
@@ -2139,7 +2149,7 @@ c            write(6,1) iobj,mem,f,ieg,e,nid,' OBJ'
       return
       end
 c-----------------------------------------------------------------------
-      subroutine setbc(sid,ifld,cbci)
+      subroutine setbc(bid,ifld,cbci)
 c
 c     sets boundary condition for a given surface id and field
 c
@@ -2148,13 +2158,28 @@ c
       include 'GEOM'
 
       character*3 cbci
-      integer sid
+      integer bid
 
-      do iel = 1,nelt
-      do ifc = 1,2*ndim
-         if (boundaryID(ifc,iel).eq.sid) cbc(ifc,iel,ifld) = cbci
-      enddo
-      enddo
+      if (bid.lt.1 .or. bid.gt.lbid)
+     $  call exitti('invalid boundary id!$',bid)
+
+      cbc_bmap(bid,ifld) = cbci
+ 
+      if (iftmsh(ifld)) then
+        do iel = 1,nelt
+        do ifc = 1,2*ndim
+           if (boundaryIDt(ifc,iel).eq.bid)
+     $       cbc(ifc,iel,ifld) = cbc_bmap(bid,ifld)
+        enddo
+        enddo
+      else
+        do iel = 1,nelv
+        do ifc = 1,2*ndim
+           if (boundaryID(ifc,iel).eq.bid)
+     $       cbc(ifc,iel,ifld) = cbc_bmap(bid,ifld)
+        enddo
+        enddo
+      endif
 
       return
       end

@@ -27,20 +27,21 @@
       real scale
 
 
-      scale = 1.0
+      if (istep.eq.0) then
+        call opzero(ext_vx,ext_vy,ext_vz) 
+      endif
 
 !     Do nothing if there's no FSI      
       if ((.not.fsi_ifstruct).and.(.not.fsi_iffluid)) return 
 
-!     Just initialization for the fluid      
+!     Just initialization
       if (istep.eq.0) then
 
-!       I'll controll the neknek processes myself 
+!       I'll control the neknek processes myself 
         ifneknekc = .false.    
 
         if (fsi_iffluid) then            
-          call opzero(ext_vx,ext_vy,ext_vz) 
-          call opzero(wx,wy,wz)
+!          call opzero(wx,wy,wz)
         else
           call opzero(velx,vely,velz)
           call opzero(accx,accy,accz)
@@ -50,14 +51,19 @@
         return
       endif        
 
+      scale = 1.0
       ifconverged = .false.
       itr = 0
+
+      call neknekgsync()      ! sync fluid and structural sessions
 
       if (fsi_iffluid) then
 
 !       Calculate fluid stresses                
         call fluid_forces(struct_ssx,struct_ssy,struct_ssz,
      $                    vx,vy,vz,pr,scale)
+
+        call outpost(struct_ssx,struct_ssy,struct_ssz,pr,t,'str')
 
 
 !       Send fluid stresses to structure
@@ -102,6 +108,8 @@
 !         Get fluid stresses            
           call fsi_neknek_stressex
 
+          call outpost(struct_ssx,struct_ssy,struct_ssz,pr,t,'str')
+
 !         Solve structural equation                  
           call plan_s               ! receive interface stresses
           
@@ -134,6 +142,7 @@
 
       endif
 
+      call neknekgsync()      ! sync fluid and structural sessions
 
       return            
       end subroutine fsi_coupling

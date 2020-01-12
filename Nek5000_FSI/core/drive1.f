@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      subroutine nek_init(comm_out)
+      subroutine nek_init(comm)
 c
       include 'SIZE'
       include 'TOTAL'
@@ -24,7 +24,7 @@ c      COMMON /SCRCH/ DUMMY7(LX1,LY1,LZ1,LELT,2)
 c      COMMON /SCRSF/ DUMMY8(LX1,LY1,LZ1,LELT,3)
 c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
-      integer comm_out
+      integer comm
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
   
       common /rdump/ ntdump
@@ -54,10 +54,13 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       ! set word size for CHARACTER
       csize = sizeof(ctest)
 
-      call setupcomm()
-      nekcomm  = intracomm
-      comm_out = nekcomm
+      call setupcomm(comm,newcomm,newcommg,'','')
+      intracomm   = newcomm   ! within a session
+      nekcomm     = newcomm
+      iglobalcomm = newcommg  ! across all sessions
       call iniproc()
+
+      if (nid.eq.nio) call printHeader
 
       etimes = dnekclock()
       istep  = 0
@@ -98,7 +101,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call vrdsmsh          ! verify mesh topology
       call mesh_metrics     ! print some metrics
 
-      call setlog  ! Initalize logical flags
+      call setlog(.true.)   ! Initalize logical flags
 
       if (ifneknekc) call neknek_setup
 
@@ -144,7 +147,8 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call dofcnt
 
-      jp = 0            ! Set perturbation field count to 0 for baseline flow
+      jp = 0  ! Set perturbation field count to 0 for baseline flow
+      p0thn = p0th
 
       call in_situ_init()
 
@@ -188,14 +192,14 @@ c-----------------------------------------------------------------------
 #ifdef TIMER
       itime = 1
 #endif
-      call nek_comm_settings(isyc,itime)
 
       ! start measurements
-      call nek_comm_startstat()
       dtmp = dnekgflops()
 
       istep  = 0
       msteps = 1
+
+      irstat = int(param(120))
 
       do kstep=1,nsteps,msteps
          call nek__multi_advance(kstep,msteps)
@@ -207,13 +211,10 @@ c-----------------------------------------------------------------------
          tuchk = tuchk + dnekclock()-etime1
          call prepost (ifoutfld,'his')
          call in_situ_check()
-         if (mod(kstep,100).eq.0 ..and. lastep.eq.0) call runstat
+         if (mod(kstep,irstat).eq.0 .and. lastep.eq.0) call runstat 
          if (lastep .eq. 1) goto 1001
       enddo
  1001 lastep=1
-
-
-      call nek_comm_settings(isyc,0)
 
       call comment
 
@@ -241,9 +242,8 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'CTIMER'
 
-!     mod_structural
-      include 'STRUCT'
-!      
+!     mod_structural      
+      include 'STRUCT'      
 
       common /cgeom/ igeom
 
@@ -254,8 +254,8 @@ c-----------------------------------------------------------------------
 !     mod_structural      
       if (.not.fsi_ifstruct) then
         call setup_convect(2) ! Save conv vel
-      endif
-!      
+      endif        
+!
 
       if (iftran) call settime
       if (ifmhd ) call cfl_check
@@ -302,12 +302,9 @@ c-----------------------------------------------------------------------
 
       else                ! PN-2/PN-2 formulation
 
-!        mod_structural            
          if (fsi_ifstruct) then
-            continue
-!           Right now doing everything in the usrchk routine
-
-         else            
+!           Right now doing everything in usrchk
+         else                  
            call setprop
            do igeom=1,ngeom
 
@@ -340,7 +337,7 @@ c-----------------------------------------------------------------------
               if (igeom.eq.ngeom.and.filterType.eq.1)
      $           call q_filter(param(103))
            enddo
-         endif
+         endif   
       endif
 
       return

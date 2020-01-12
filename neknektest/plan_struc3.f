@@ -642,7 +642,11 @@ C
 
         call struct_bcdirvc(vx,vy,vz,v1mask,v2mask,v3mask)
         call struct_bcneutr       ! add user traction to rhs 
-        call struct_fluidstress   ! add fluid traction to rhs 
+        call struct_fluidstress   ! add fluid traction to rhs
+
+!       debugging
+!        call opcopy(ts1,ts2,ts3,struct_ssx,struct_ssy,struct_ssz) 
+!        call opcopy(ts1,ts2,ts3,bfx,bfy,bfz) 
 
         call opcopy(resv1,resv2,resv3,vx,vy,vz)
 
@@ -655,6 +659,10 @@ C
         call opsub2(resv1,resv2,resv3,bfx,bfy,bfz)
 
         call opcmult(resv1,resv2,resv3,-1.)
+
+!       debugging
+!        call opcopy(ts1,ts2,ts3,resv1,resv2,resv3) 
+
 
 !       if not solving for increment    
 !        call opcopy(resv1,resv2,resv3,bfx,bfy,bfz)
@@ -1092,7 +1100,6 @@ c-----------------------------------------------------------------------
       call copy(bmm,bm1,nt)
       call col2(bmm,vmult,nt)
 
-
 !     initialize solution      
       call opzero(solv(1,1),solv(1,2),solv(1,3))
 
@@ -1113,7 +1120,8 @@ c-----------------------------------------------------------------------
         rhs(1) = beta
 
         if (resid0.lt.1.0e-10) then
-          if (nid.eq.0) write(6,*) 'Initial residual too low'
+          if (nid.eq.0) write(6,'(A28,2x,E16.6E2)') 
+     $      'Initial residual too low', resid0
           call opzero(rv1,rv2,rv3)
           return
         endif          
@@ -1477,6 +1485,210 @@ c------------------------------------------------------------------------
       return
       end subroutine update_fields
 !---------------------------------------------------------------------- 
+      subroutine struct_settime
+
+!      implicit none
+
+      include 'SIZE'
+      include 'GEOM'
+      include 'INPUT'
+      include 'TSTEP'
+      COMMON  /CPRINT/ IFPRINT
+      LOGICAL          IFPRINT
+      SAVE
+C
+      irst = param(46)
+C
+C     Set time step.
+C
+      do 10 ilag=10,2,-1
+         dtlag(ilag) = dtlag(ilag-1)
+ 10   continue
+      call struct_setdt
+      dtlag(1) = dt
+      if (istep.eq.1 .and. irst.le.0) dtlag(2) = dt
+c
+c     set time.
+c
+      timef    = time
+      time     = time+dt
+c
+c     set coefficients in ab/bd-schemes.
+c
+      call setordbd
+      if (irst.gt.0) nbd = nbdinp
+      call rzero (bd,10)
+      call setbd (bd,dtlag,nbd)
+      if (param(27).lt.0) then
+         nab = nbdinp
+      else
+         nab = 3
+      endif
+      if (istep.lt.nab.and.irst.le.0) nab = istep
+      call rzero   (ab,10)
+      call setabbd (ab,dtlag,nab,nbd)
+      if (ifmvbd) then
+         nbdmsh = 1
+         nabmsh = param(28)
+         if (nabmsh.gt.istep .and. irst.le.0) nabmsh = istep
+         if (ifsurt)          nabmsh = nbd
+         call rzero   (abmsh,10)
+         call setabbd (abmsh,dtlag,nabmsh,nbdmsh)
+      endif
+
+c
+c     set logical for printout to screen/log-file
+c
+      ifprint = .false.
+      if (iocomm.gt.0.and.mod(istep,iocomm).eq.0) ifprint=.true.
+      if (istep.eq.1  .or. istep.eq.0           ) ifprint=.true.
+      if (nio.eq.-1)  ifprint=.false.
+ 
+      return
+      end subroutine struct_settime
+!---------------------------------------------------------------------- 
+
+      subroutine struct_setdt
+c
+c     Set the new time step. All cases covered.
+c
+      include 'SIZE'
+      include 'SOLN'
+      include 'MVGEOM'
+      include 'INPUT'
+      include 'TSTEP'
+      include 'PARALLEL'
+
+      common /scruz/ cx(lx1*ly1*lz1*lelt)
+     $ ,             cy(lx1,ly1,lz1,lelt)
+     $ ,             cz(lx1,ly1,lz1,lelt)
+
+      common /cprint/ ifprint
+      logical         ifprint
+      common /udxmax/ umax
+      REAL     DTOLD
+      SAVE     DTOLD
+      DATA     DTOLD /0.0/
+      REAL     DTOpf
+      SAVE     DTOpf
+      DATA     DTOpf /0.0/
+      logical iffxdt
+      save    iffxdt
+      data    iffxdt /.false./
+C
+
+      if (param(12).lt.0.or.iffxdt) then
+         iffxdt    = .true.
+         param(12) = abs(param(12))
+         dt        = param(12)
+         dtopf     = dt
+!         if (ifmvbd) then
+!           call opsub3 (cx,cy,cz,vx,vy,vz,wx,wy,wz)
+!           call compute_cfl(umax,cx,cy,cz,1.0)
+!         else
+!           call compute_cfl(umax,vx,vy,vz,1.0)
+!         endif
+
+         goto 200
+      else IF (PARAM(84).NE.0.0) THEN
+         if (dtold.eq.0.0) then
+            dt   =param(84)
+            dtold=param(84)
+            dtopf=param(84)
+            return
+         else
+            dtold=dt
+            dtopf=dt
+            dt=dtopf*param(85)
+            dt=min(dt,param(12))
+         endif
+      endif
+
+C
+C     Find DT=DTCFL based on CFL-condition (if applicable)
+C
+      CALL SETDTC
+      DTCFL = DT
+C
+C     Find DTFS based on surface tension (if applicable)
+C
+      CALL SETDTFS (DTFS)
+C
+C     Select appropriate DT
+C
+      IF ((DT.EQ.0.).AND.(DTFS.GT.0.)) THEN
+          DT = DTFS
+      ELSEIF ((DT.GT.0.).AND.(DTFS.GT.0.)) THEN
+          DT = MIN(DT,DTFS)
+      ELSEIF ((DT.EQ.0.).AND.(DTFS.EQ.0.)) THEN
+          DT = 0.
+          IF (IFFLOW.AND.NID.EQ.0.AND.IFPRINT) THEN
+             WRITE (6,*) 'WARNING: CFL-condition & surface tension'
+             WRITE (6,*) '         are not applicable'
+          endif
+      ELSEIF ((DT.GT.0.).AND.(DTFS.EQ.0.)) THEN
+          DT = DT
+      ELSE
+          DT = 0.
+          IF (NIO.EQ.0) WRITE (6,*) 'WARNING: DT<0 or DTFS<0'
+          IF (NIO.EQ.0) WRITE (6,*) '         Reset DT      '
+      endif
+C
+C     Check DT against user-specified input, DTINIT=PARAM(12).
+C
+      IF ((DT.GT.0.).AND.(DTINIT.GT.0.)) THEN
+         DT = MIN(DT,DTINIT)
+      ELSEIF ((DT.EQ.0.).AND.(DTINIT.GT.0.)) THEN
+         DT = DTINIT
+      ELSEIF ((DT.GT.0.).AND.(DTINIT.EQ.0.)) THEN
+         DT = DT
+      ELSEIF (.not.iffxdt) THEN
+         DT = 0.001
+         IF(NIO.EQ.0)WRITE (6,*) 'WARNING: Set DT=0.001 (arbitrarily)'
+      endif
+C
+C     Check if final time (user specified) has been reached.
+C
+ 200  IF (TIME+DT .GE. FINTIM .AND. FINTIM.NE.0.0) THEN
+C        Last step
+         LASTEP = 1
+         DT = FINTIM-TIME
+         IF (NIO.EQ.0) WRITE (6,*) 'Final time step = ',DT
+      endif
+C
+      COURNO = DT*UMAX
+      IF (NIO.EQ.0.AND.IFPRINT.AND.DT.NE.DTOLD)
+     $   WRITE (6,100) DT,DTCFL,DTFS,DTINIT
+ 100     FORMAT(5X,'DT/DTCFL/DTFS/DTINIT',4E12.3)
+C
+C     Put limits on how much DT can change.
+C
+      IF (DTOLD.NE.0.0 .AND. LASTEP.NE.1) THEN
+         DTMIN=0.8*DTOLD
+         DTMAX=1.2*DTOLD
+         DT = MIN(DTMAX,DT)
+         DT = MAX(DTMIN,DT)
+      endif
+      DTOLD=DT
+
+C      IF (PARAM(84).NE.0.0) THEN
+C            dt=dtopf*param(85)
+C            dt=min(dt,param(12))
+C      endif
+
+      if (iffxdt) dt=dtopf
+      COURNO = DT*UMAX
+
+! synchronize time step for multiple sessions
+      if (ifneknek) dt = glmin_ms(dt,1)
+c
+      if (iffxdt.and.abs(courno).gt.10.*abs(ctarg)) then
+         if (nid.eq.0) write(6,*) 'CFL, Ctarg!',courno,ctarg
+         call emerxit
+      endif
 
 
+      return
+      end subroutine struct_setdt
+!---------------------------------------------------------------------- 
 

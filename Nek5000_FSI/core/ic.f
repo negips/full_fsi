@@ -1836,6 +1836,35 @@ c
       CALL SETDEF
       CALL SFASTAX
 c
+      do ie = 1,nelt
+         ! x
+         xc(1,ie) = XM1(1  ,1  ,1  ,ie)
+         xc(2,ie) = XM1(lx1,1  ,1  ,ie)
+         xc(3,ie) = XM1(lx1,ly1,1  ,ie)
+         xc(4,ie) = XM1(1  ,ly1,1  ,ie)
+         xc(5,ie) = XM1(1  ,1  ,lz1,ie)
+         xc(6,ie) = XM1(lx1,1  ,lz1,ie)
+         xc(7,ie) = XM1(lx1,ly1,lz1,ie)
+         xc(8,ie) = XM1(1  ,ly1,lz1,ie)
+         ! y
+         yc(1,ie) = YM1(1  ,1  ,1  ,ie)
+         yc(2,ie) = YM1(lx1,1  ,1  ,ie)
+         yc(3,ie) = YM1(lx1,ly1,1  ,ie)
+         yc(4,ie) = YM1(1  ,ly1,1  ,ie)
+         yc(6,ie) = YM1(lx1,1  ,lz1,ie)
+         yc(7,ie) = YM1(lx1,ly1,lz1,ie)
+         yc(8,ie) = YM1(1  ,ly1,lz1,ie)
+         ! z 
+         zc(1,ie) = ZM1(1  ,1  ,1  ,ie)
+         zc(2,ie) = ZM1(lx1,1  ,1  ,ie)
+         zc(3,ie) = ZM1(lx1,ly1,1  ,ie)
+         zc(4,ie) = ZM1(1  ,ly1,1  ,ie)
+         zc(5,ie) = ZM1(1  ,1  ,lz1,ie)
+         zc(6,ie) = ZM1(lx1,1  ,lz1,ie)
+         zc(7,ie) = ZM1(lx1,ly1,lz1,ie)
+         zc(8,ie) = ZM1(1  ,ly1,lz1,ie)
+      enddo
+
       if(nio.eq.0) then
         write(6,*) 'done :: regenerate geometry data',icall
         write(6,*) ' '
@@ -1899,7 +1928,7 @@ c-----------------------------------------------------------------------
 
       real u(lx1*ly1*lz1,1)
 
-      real*4 wk(lwk) ! message buffer
+      real*4 wk(2*lwk) ! message buffer
       parameter(lrbs=20*lx1*ly1*lz1*lelt)
       common /vrthov/ w2(lrbs) ! read buffer
       real*4 w2
@@ -1915,16 +1944,13 @@ c-----------------------------------------------------------------------
       len    = nxyzr*wdsizr  ! message length
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
-      ! check message buffer
-      num_recv  = len
-      num_avail = lwk*wdsize
+      ! check message buffer wk
+      num_recv  = nxyzr*nelt
+      num_avail = size(wk)
       call lim_chk(num_recv,num_avail,'     ','     ','mfi_gets a')
 
       ! setup read buffer
       if (nid.eq.pid0r) then
-c         dtmp  = dnxyzr*nelr 
-c         nread = dtmp/lrbs
-c         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
          i8tmp = int(nxyzr,8)*int(nelr,8)
          nread = i8tmp/int(lrbs,8)
          if (mod(i8tmp,int(lrbs,8)).ne.0) nread = nread + 1
@@ -2036,7 +2062,7 @@ c-----------------------------------------------------------------------
       real u(lx1*ly1*lz1,1),v(lx1*ly1*lz1,1),w(lx1*ly1*lz1,1)
       logical iskip
 
-      real*4 wk(lwk) ! message buffer
+      real*4 wk(2*lwk) ! message buffer
       parameter(lrbs=20*lx1*ly1*lz1*lelt)
       common /vrthov/ w2(lrbs) ! read buffer
       real*4 w2
@@ -2047,20 +2073,16 @@ c-----------------------------------------------------------------------
       call nekgsync() ! clear outstanding message queues.
 
       nxyzr  = ldim*nxr*nyr*nzr
-      dnxyzr = nxyzr
       len    = nxyzr*wdsizr             ! message length in bytes
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
-      ! check message buffer
-      num_recv  = len
-      num_avail = lwk*wdsize
+      ! check message buffer wk
+      num_recv  = nxyzr*nelt 
+      num_avail = size(wk)
       call lim_chk(num_recv,num_avail,'     ','     ','mfi_getv a')
 
       ! setup read buffer
       if(nid.eq.pid0r) then
-c         dtmp  = dnxyzr*nelr
-c         nread = dtmp/lrbs
-c         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
          i8tmp = int(nxyzr,8)*int(nelr,8)
          nread = i8tmp/int(lrbs,8)
          if (mod(i8tmp,int(lrbs,8)).ne.0) nread = nread + 1
@@ -2304,11 +2326,6 @@ c                4  7  10  13   23    33    53    62     68     74
     1 format(4x,i2,3i3,2i10,e20.13,i9,2i6,20a1)
 
       if (nid.eq.0) write(6,*) 'WARNING: reading depreacted header!'
-
-      if (nelr.gt.lelr) then
-        write(6,*)nid,nelr,lelr,'parse_std_hdr06: inc. lelr in RESTART'
-        call exitt
-      endif
 
 c     Assign read conditions, according to rdcode
 c     NOTE: In the old hdr format: what you see in file is what you get.
@@ -2560,18 +2577,6 @@ c-----------------------------------------------------------------------
       ifmpiio = .false.
 #endif
 
-      if (ifmpiio) then
-         if (nelt.gt.lelr) then
-            write(6,*) 'ERROR: increase lelr in SIZE!', lelr, nelt
-            call exitt
-         endif
-      else
-         if (nelr.gt.lelr) then
-            write(6,*) 'ERROR: increase lelr in SIZE!', lelr, nelr
-            call exitt
-         endif
-      endif
-
       if(.not.ifmpiio) then
 
         stride = np / nfiler
@@ -2596,6 +2601,10 @@ c-----------------------------------------------------------------------
            call byte_read (bytetest,1,ierr) 
            if(ierr.ne.0) goto 102
            call mfi_parse_hdr (hdr,ierr)    ! replace hdr with correct one 
+           if (nelr.gt.lelr) then
+              write(6,*) 'ERROR: increase lelr in SIZE to ', nelr 
+              call exitt
+           endif
            call byte_read (er,nelr,ierr)    ! get element mapping
            if(if_byte_sw) call byte_reverse(er,nelr,ierr)
         else
@@ -2625,6 +2634,10 @@ c-----------------------------------------------------------------------
 
         if(ierr.ne.0) goto 102
         call byte_set_view(offs,ifh_mbyte)
+        if (nelr.gt.lelr) then
+           write(6,*) 'ERROR: increase lelr in SIZE to ', nelr 
+           call exitt
+        endif
         call byte_read_mpi(er,nelr,-1,ifh_mbyte,ierr)
         if(ierr.ne.0) goto 102
         if(if_byte_sw) call byte_reverse(er,nelr,ierr)

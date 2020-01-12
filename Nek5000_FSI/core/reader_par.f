@@ -18,6 +18,8 @@ c
       if(ierr .ne. 0) call exitt
       call bcastParam
 
+      call usrdat0
+
       call read_re2_hdr(ifbswap)
 
       call chkParam
@@ -259,9 +261,6 @@ c set parameters
          call finiparser_getDbl(d_out,'general:numSteps',ifnd)
          if (ifnd .eq. 1) then 
             param(11) = d_out 
-         else
-            write(6,*) 'general:numSteps not found!'
-            goto 999
          endif
       endif
 
@@ -439,6 +438,20 @@ c set parameters
       call finiparser_getDbl(d_out,'mesh:firstBCFieldIndex',ifnd)
       if(ifnd .eq. 1) param(33) = int(d_out)
 
+      call finiparser_getString(c_out,'pressure:solver',ifnd)
+      if (ifnd .eq. 1) then 
+         call capit(c_out,132)
+         if (index(c_out,'GMRES') .eq. 1) then
+            param(42) = 0
+         else if (index(c_out,'CGFLEX') .eq. 1) then
+            param(42) = 2
+         else
+            write(6,*) 'value: ',trim(c_out)
+            write(6,*) 'not supported for pressure:solver!'
+            goto 999
+         endif
+      endif
+
       call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
       if (ifnd .eq. 1) then 
          call capit(c_out,132)
@@ -505,15 +518,22 @@ c        stabilization type: none, explicit or hpfrt
             write(6,*) 'is required for general:filtering!'
             goto 999
          endif
-         call finiparser_getDbl(d_out,'general:filterCutoffRatio',ifnd)
+         call finiparser_getDbl(d_out,'general:filterModes',ifnd)
          if (ifnd .eq. 1) then
-            dtmp = anint(lx1*(1.0 - d_out)) 
-            param(101) = max(dtmp-1,0.0)
-            if (abs(1.0 - d_out).lt.0.01) filterType = 0
+            param(101) = int(d_out) - 1
+            if (int(param(101)).eq.0) filterType = 0
          else
-            write(6,*) 'general:filterCutoffRatio'
-            write(6,*) 'is required for general:filtering!'
-            goto 999
+            call finiparser_getDbl
+     $           (d_out,'general:filterCutoffRatio',ifnd)
+            if (ifnd .eq. 1) then
+              dtmp = anint(lx1*(1.0 - d_out)) 
+              param(101) = max(dtmp-1,0.0)
+              if (abs(1.0 - d_out).lt.0.01) filterType = 0
+            else 
+              write(6,*) 'general:filterCutoffRatio or filterModes'
+              write(6,*) 'is required for general:filtering!'
+              goto 999
+            endif
          endif
  101     continue 
       endif
@@ -626,8 +646,14 @@ c set logical flags
       call capit(c_out,132)
       if (index(c_out,'STEADYSTOKES').eq.1) then
          iftran = .false.
-      else if (index(c_out,'INCOMPNS').eq.1) then
-         continue
+         ifadvc(1) = .false.
+      else if (index(c_out,'STOKES').eq.1) then
+         ifadvc(1) = .false.
+      else if (index(c_out,'STEADYHEAT').eq.1) then
+         iftran = .false.
+         ifflow = .false. 
+         ifheat = .true.
+         ifadvc(2) = .false.
       else if (index(c_out,'LOWMACHNS').eq.1) then
          iflomach = .true.
       else if (index(c_out,'INCOMPLINNS').eq.1 .or.
@@ -1108,20 +1134,18 @@ c
          call exitt
       endif
 
-      if (ifdp0dt .and. .not.ifcvode) then
-         if(nid.eq.0) write(6,*) 
-     $   'ABORT: Varying p0 requires CVODE!'
-         call exitt
-      endif
-
       if (ifchar .and. param(99).lt.0) then
         if (nid.eq.0) write(6,*) 
      &     'ABORT: Characteristic scheme needs dealiasing!'
         call exitt
       endif
 
-      if (ifneknekc.and.(nelgv.ne.nelgt)) call exitti(
-     $ 'ABORT: nek-nek not supported w/ conj. ht transfer$',1)
+      if (.not.ifsplit .and. ifaxis .and. ifstrs) then
+        if (nid.eq.0) write(6,*)
+     $    'ABORT: Axisymetric and stress formulation not supported ' //
+     $    'for PN/PN-2$'
+        call exitt
+      endif
 
       if (ifchar.and.(nelgv.ne.nelgt)) call exitti(
      $ 'ABORT: Characteristics not supported w/ conj. ht transfer$',1)

@@ -29,5 +29,5 @@
 **/out.*
 **/fsi_io.out
 **/fsi_terms.out
-
-
+**/*_logfile
+**/*.tgz
