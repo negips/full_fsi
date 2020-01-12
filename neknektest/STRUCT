@@ -45,9 +45,14 @@
       real struct_ssx(lx1,ly1,lz1,lelv)
       real struct_ssy(lx1,ly1,lz1,lelv)
       real struct_ssz(lx1,ly1,lz1,lelv)
-      common /struct_ss/ struct_ssx,struct_ssy,struct_ssz
 
+!     Stokes Stress field     
+      real stokes_ssx(lx1,ly1,lz1,lelv)
+      real stokes_ssy(lx1,ly1,lz1,lelv)
+      real stokes_ssz(lx1,ly1,lz1,lelv)
 
+      common /struct_ss/ struct_ssx,struct_ssy,struct_ssz,
+     $                   stokes_ssx,stokes_ssy,stokes_ssz
 !     Krylov field
       integer struct_nkryl
       parameter (struct_nkryl=40)

@@ -7,6 +7,7 @@
       REAL SC_VZ(LX1,LY1,LZ1,LELV)
       REAL SC_PR(LX2,LY2,LZ2,LELV)
 
+!     Interface velocities
       REAL EXT_VX(LX1,LY1,LZ1,LELV)  
       REAL EXT_VY(LX1,LY1,LZ1,LELV)
       REAL EXT_VZ(LX1,LY1,LZ1,LELV)

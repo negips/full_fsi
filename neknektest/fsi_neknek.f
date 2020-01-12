@@ -26,6 +26,15 @@
       logical ifconverged
       real scale
 
+      real rv1,rv2,rv3,dv1,dv2,dv3
+
+      common /scrns/  rv1 (lx1,ly1,lz1,lelv)
+     $ ,              rv2 (lx1,ly1,lz1,lelv)
+     $ ,              rv3 (lx1,ly1,lz1,lelv)
+     $ ,              dv1 (lx1,ly1,lz1,lelv)
+     $ ,              dv2 (lx1,ly1,lz1,lelv)
+     $ ,              dv3 (lx1,ly1,lz1,lelv)
+
 
       if (istep.eq.0) then
         call opzero(ext_vx,ext_vy,ext_vz) 
@@ -64,7 +73,7 @@
      $                    vx,vy,vz,pr,scale)
 
 !       Send fluid stresses to structure
-        call fsi_neknek_stressex
+        call fsi_neknek_stressex(struct_ssx,struct_ssy,struct_ssz)
 
         ifconverged = .true.  ! for now no iterations
 
@@ -74,25 +83,37 @@
 !        call lbcast(ifconverged)
 !        call setnekcomm(intracomm)
 
-
-!       Get interface velocities        
-        call fsi_neknek_velex
-
 !       call check_fsi_convergence()         
         do while (.not.ifconverged)
 
           itr = itr + 1
 
 !         Get new interface velocity          
+          call fsi_neknek_velex(vx,vy,vz)
 
 !         Stokes correction step          
-!          call stokes_solve()
+          call stokes_solve()
+
+!         Calculate fluid stresses                
+          call fluid_forces(stokes_ssx,stokes_ssy,stokes_ssz,
+     $                    sc_vx,sc_vy,sc_vz,sc_pr,scale)
+
+          call opcopy(rv1,rv2,rv3,struct_ssx,struct_ssy,struct_ssz)
+          call opadd2(rv1,rv2,rv3,stokes_ssx,stokes_ssy,stokes_ssz)
 
 !         Send fluid stresses to structure
+          call fsi_neknek_stressex(rv1,rv2,rv3)
+
+!         Send fluid stresses to structure
+          call fsi_neknek_velex(vx,vy,vz)
 
 !         Get broadcasted convergence
 
         enddo
+
+!       Get extrapolated interface velocities
+!       Puts it into arrays ext_vx,...        
+        call fsi_neknek_velex(vx,vy,vz)
 
 !       Extend interface velocity to the fluid domain      
 
@@ -102,11 +123,13 @@
 
           itr = itr + 1
 
+          call opcopy(rv1,rv2,rv3,velx,vely,velz)
+
 !         Get fluid stresses            
           call fsi_neknek_stressex
 
-!         Solve structural equation                  
-          call plan_s               ! receive interface stresses
+!         Solve structural equation         
+          call plan_s
           
 !         Check if interface velocities match
 
@@ -129,8 +152,8 @@
 
         enddo 
 
-!       Send velocities to fluid            
-        call fsi_neknek_velex
+!       Send extrapolated velocities to fluid            
+        call fsi_neknek_velex(velx,vely,velz)
         call opcopy(ext_vx,ext_vy,ext_vz,valint(1,1,1,1,1),
      $              valint(1,1,1,1,2),valint(1,1,1,1,3))
 
@@ -143,18 +166,22 @@
       end subroutine fsi_coupling
 !---------------------------------------------------------------------- 
 
-      subroutine fsi_neknek_velex
+      subroutine fsi_neknek_velex(ux,uy,uz)
 
       implicit none            
 
       include 'SIZE'
-      include 'TOTAL'
+!      include 'TOTAL'
+      include 'TSTEP'
+      include 'SOLN'
       include 'NEKNEK'
       include 'CTIMER'
       include 'STRUCT'
 
       integer lt,lxyz
       parameter (lt=lx1*ly1*lz1*lelt,lxyz=lx1*ly1*lz1)
+
+      real ux(lt),uy(lt),uz(lt)
 
       real pm1,wk1,wk2
       common /scrcg/ pm1(lt),wk1(lxyz),wk2(lxyz)
@@ -178,27 +205,16 @@
       nt = lx1*ly1*lz1*nelt
 
 c     Interpolate using findpts_eval
-      if (fsi_iffluid) then
-        call field_eval(fieldout(1,1),1,vx)
-        call field_eval(fieldout(1,2),1,vy)
-        if (ldim.eq.3) call field_eval(fieldout(1,ldim),1,vz)
-      elseif (fsi_ifstruct) then
-!        call field_eval(fieldout(1,1),1,velx)
-!        call field_eval(fieldout(1,2),1,vely)
-!        if (ldim.eq.3) call field_eval(fieldout(1,ldim),1,velz)
+      call field_eval(fieldout(1,1),1,ux)
+      call field_eval(fieldout(1,2),1,uy)
+      if (ldim.eq.3) call field_eval(fieldout(1,ldim),1,uz)
 
-        call field_eval(fieldout(1,1),1,vx)
-        call field_eval(fieldout(1,2),1,vy)
-        if (ldim.eq.3) call field_eval(fieldout(1,ldim),1,vz)
-           
-      endif 
-
-      call field_eval(fieldout(1,ldim+1),1,pm1)
-      if (nfld_neknek.gt.ldim+1) then 
-        do i=ldim+2,nfld_neknek
-          call field_eval(fieldout(1,i),1,t(1,1,1,1,i-ldim-1))
-        enddo
-      endif
+!      call field_eval(fieldout(1,ldim+1),1,pm1)
+!      if (nfld_neknek.gt.ldim+1) then 
+!        do i=ldim+2,nfld_neknek
+!          call field_eval(fieldout(1,i),1,t(1,1,1,1,i-ldim-1))
+!        enddo
+!      endif
          
 c     Now we can transfer this information to valint array from which
 c     the information will go to the boundary points
@@ -222,18 +238,21 @@ c     the information will go to the boundary points
       end subroutine fsi_neknek_velex
 c--------------------------------------------------------------------------
 
-      subroutine fsi_neknek_stressex
+      subroutine fsi_neknek_stressex(sx,sy,sz)
 
       implicit none            
 
       include 'SIZE'
-      include 'TOTAL'
+!      include 'TOTAL'
+      include 'TSTEP'
       include 'NEKNEK'
       include 'CTIMER'
       include 'STRUCT'
 
       integer lt,lxyz
       parameter (lt=lx1*ly1*lz1*lelt,lxyz=lx1*ly1*lz1)
+
+      real sx(lt),sy(lt),sz(lt)
 
       real pm1,wk1,wk2
       common /scrcg/ pm1(lt),wk1(lxyz),wk2(lxyz)
@@ -252,29 +271,22 @@ c--------------------------------------------------------------------------
       call neknekgsync()
       etime1 = dnekclock()
 
-      call mappr(pm1,pr,wk1,wk2)  ! Map pressure to pm1 
       nv = lx1*ly1*lz1*nelv
       nt = lx1*ly1*lz1*nelt
 
 c     Interpolate using findpts_eval
-      if (fsi_iffluid) then
-        call field_eval(fieldout(1,1),1,struct_ssx)
-        call field_eval(fieldout(1,2),1,struct_ssy)
-        if (ldim.eq.3) call field_eval(fieldout(1,ldim),1,struct_ssz)
-      elseif (fsi_ifstruct) then
-        call field_eval(fieldout(1,1),1,struct_ssx)
-        call field_eval(fieldout(1,2),1,struct_ssy)
-        if (ldim.eq.3) call field_eval(fieldout(1,ldim),1,struct_ssz)
-      endif 
-         
-c     Now we can transfer this information to valint array from which
-c     the information will go to the boundary points
-      do i=1,npoints_nn
-        idx = iList(1,i)
-        struct_ssx(idx,1,1,1)=fieldout(i,1)
-        struct_ssy(idx,1,1,1)=fieldout(i,2)
-        if (if3d) struct_ssz(idx,1,1,1)=fieldout(i,3)
-      enddo
+      call field_eval(fieldout(1,1),1,sx)
+      call field_eval(fieldout(1,2),1,sy)
+      if (ldim.eq.3) call field_eval(fieldout(1,ldim),1,sz)
+
+      if (fsi_ifstruct) then
+        do i=1,npoints_nn
+          idx = iList(1,i)
+          struct_ssx(idx,1,1,1)=fieldout(i,1)
+          struct_ssy(idx,1,1,1)=fieldout(i,2)
+          if (ldim.eq.3) struct_ssz(idx,1,1,1)=fieldout(i,3)
+        enddo
+      endif        
 
       call nekgsync()
       etime = dnekclock() - etime1

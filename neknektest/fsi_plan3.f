@@ -6,7 +6,7 @@
 !======================================================================       
 
 c-----------------------------------------------------------------------
-      subroutine fsi_fluid_plan3
+      subroutine stokes_solve()
 
       implicit none
 
@@ -79,7 +79,7 @@ C
 
          
       return
-      end subroutine fsi_fluid_plan3
+      end subroutine stokes_solve
 C---------------------------------------------------------------------
 
       subroutine fsi_cresvif (resv1,resv2,resv3,h1,h2)
@@ -407,11 +407,20 @@ c-----------------------------------------------------------------------
       include 'FSI'
       include 'TSTEP'
       include 'INPUT'
+      include 'STRUCT'
+      include 'SOLN'
+      include 'NEKNEK'
 
       integer ix,iy,iz,ieg,iside,iel
       real dx,dy
 
       iel=gllel(ieg)
+
+!     Correction of velocity is the boundary condition
+!     Assuming valint has been filled up      
+      ux = valint(ix,iy,iz,iel,1) - vx(ix,iy,iz,iel)
+      uy = valint(ix,iy,iz,iel,2) - vy(ix,iy,iz,iel)
+      if (if3d) uz = valint(ix,iy,iz,iel,3) - vz(ix,iy,iz,iel)
 
 !     apply boundary conditions obtained from structural equations      
 
