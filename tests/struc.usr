@@ -33,21 +33,33 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-       subroutine userbc (ix,iy,iz,iside,ieg)
-       implicit none
-       include 'SIZE'
-       include 'NEKUSE'          ! UX, UY, UZ, TEMP, X, Y, PA
-       integer ix,iy,iz,iside,ieg
+      subroutine userbc (ix,iy,iz,iside,ieg)
 
-       ux = 1.0
-       uy = 0.
-       uz = 0. 
-       
-       return
-       end
+      implicit none
+
+      include 'SIZE'
+      include 'NEKUSE'          ! UX, UY, UZ, TEMP, X, Y, PA
+      include 'PARALLEL'
+      include 'FSI'
+
+      integer ix,iy,iz,iside,ieg,iel
+      
+      iel = gllel(ieg)
+      if (cb.eq.'mv ') then
+        ux  = ext_vx(ix,iy,iz,iel) 
+        uy  = ext_vy(ix,iy,iz,iel)
+        uz  = ext_vz(ix,iy,iz,iel)
+      else
+        ux  = 1.0
+        uy  = 0.
+        uz  = 0.
+      endif  
+      
+      return
+      end
 c -----------------------------------------------------------------------
-       subroutine useric (ix,iy,iz,ieg)
-       implicit none
+      subroutine useric (ix,iy,iz,ieg)
+      implicit none
       include 'SIZE'
       include 'NEKUSE'          ! UX, UY, UZ, TEMP, X, Y, Z
       integer ix,iy,iz,ieg

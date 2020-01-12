@@ -52,6 +52,8 @@ C     Read Mesh Info
       ifre2 = .false.
       if (nelgs.lt.0) ifre2 = .true.
 
+      call usrdat0
+
       if (nelgt.gt.350000 .and. .not.ifre2) 
      $   call exitti('Problem size requires .re2!$',1)
 
@@ -105,11 +107,27 @@ C     End of input data, close read file.
      $                             dnekclock()-etime0,' sec'
       endif
 
- 99   do iel = 1,nelt
+ 99   call izero(boundaryID, size(boundaryID))
+      call izero(boundaryIDt, size(boundaryIDt))
+
+      do iel = 1,nelv
       do ifc = 1,2*ndim   
          boundaryID(ifc,iel) = bc(5,ifc,iel,1)
       enddo
-      enddo 
+      enddo
+
+      ntmsh = 0
+      do i=1,ldimt
+         if(iftmsh(1+i)) ntmsh = ntmsh + 1 
+      enddo
+
+      if (ntmsh.gt.0) then
+        do iel = 1,nelt
+        do ifc = 1,2*ndim   
+           boundaryIDt(ifc,iel) = bc(5,ifc,iel,2)
+        enddo
+        enddo
+      endif 
 
       return
       END
@@ -156,12 +174,12 @@ C     First check - use 1/Multiplicity
 C
       IF (IFHEAT) THEN 
          CALL COPY(TA,TMULT,NTOT)
-      ELSE 
+      ELSE
          CALL COPY(TA,VMULT,NTOT)
       ENDIF
 c
-c      write(6,1) 
-c     $ (nid,'tab4',lglel(ie),(ta(k,1,1,ie),k=1,lx1*ly1),ie=1,nelt)
+c     write(6,1) 
+c    $(nid,'tab4',lglel(ie),(ta(k,1,1,ie),k=1,lx1*ly1),ie=1,nelt)
 c   1 format(i3,a4,i3,16f5.2)
 c
       CALL DSSUM(TA,lx1,ly1,lz1)

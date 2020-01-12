@@ -1,54 +1,55 @@
-function make_3rd_party() {
-  if [ $NOCOMPILE -ne 0 ]; then
-    return 0
-  fi
-  echo "build 3rd-party software ..."
+trap onexit EXIT
 
-  CFLAGS_=$CFLAGS
-  if ! echo $CFLAGS | grep -q '\-O' ; then 
-     CFLAGS+=" -O2"
-  fi 
-  FFLAGS_=$FFLAGS
-  if ! echo $FFLAGS | grep -q '\-O' ; then 
-     FFLAGS+=" -O2"
-  fi 
+function onexit() {
+  retval=$?
+  if [ $retval -gt 0 ] && [ $retval -lt 11 ]; then
+     printf "\nAn ERROR occured, see build.log for details\n"
+  fi
+}
+
+function build_3rdparty() {
+  printf "building 3rd-party dependencies ... "
+  set -o pipefail
+
+  cd $SOURCE_ROOT_BLAS
+  FFLAGS="-O0 $FF77 $FFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+  cd $CASEDIR 
 
   cd $SOURCE_ROOT_GSLIB
-  ./install
+  CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   cd $CASEDIR 
 
   if [ $PARRSB -ne 0 ]; then
      cd $SOURCE_ROOT_PARRSB
-     ./install
+     CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
   if [ $PARMETIS -ne 0 ]; then
      cd $SOURCE_ROOT_PARMETIS
-     ./install
+     CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
   if [ $CVODE -ne 0 ]; then
      cd $SOURCE_ROOT_CVODE
-     ./install
+     CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
   if [ $HYPRE -ne 0 ]; then
      cd $SOURCE_ROOT_HYPRE
-     ./install
+     CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
-  CFLAGS=$CFLAGS_
-  export CFLAGS
-  FFLAGS=$FFLAGS_
-  export FFLAGS
+  printf "done\n"
+  set +o pipefail
 }
 
-function clean_3rd_party() {
-  echo "cleaning 3rd-party software ..."
+function clean_3rdparty() {
+  cd $SOURCE_ROOT_BLAS; ./install clean 2>/dev/null
+  cd $CASEDIR
   cd $SOURCE_ROOT_GSLIB; ./install clean 2>/dev/null
   cd $CASEDIR
   cd $SOURCE_ROOT_PARRSB; ./install clean 2>/dev/null
@@ -61,127 +62,115 @@ function clean_3rd_party() {
   cd $CASEDIR
 }
 
-# This include file is used by the makenek script
-# to automatically create a makefile for Nek5000 
-# ------------------------------------------------
+function config_nek() {
 
-echo "makenek - automatic build tool for Nek5000"
-
-if [ "$PPLIST" == "?" ]; then
-  echo "available pre-processor symbols:" 
-  echo "  NOMPIIO     deactivate MPI-IO support"
-  echo "  BGQ         use BGQ optimized mxm"
-  echo "  XSMM        use libxsmm for mxm"
-  echo "  CVODE       compile with CVODE support for scalars"
-  echo "  HYPRE       compile with HYPRE support"
-  echo "  VENDOR_BLAS use VENDOR BLAS/LAPACK"
-  exit 1
-fi
+# set defaults
+: ${NEK_SOURCE_ROOT:="$HOME/Nek5000"}
+: ${FC:="mpif77"}
+: ${CC:="mpicc"}
+: ${MPI:=1}
+: ${PROFILING:=1}
+: ${VISIT:=0}
+: ${PPLIST:=""}
 
 # first do some checks ...
-if [ "$1" == "-h" ]; then
+if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
+  echo "Options and arguments:"
+  echo "  <casename>    name of usr file without extension"
+  echo "  clean         cleanup build environment"
+  echo "  -build-dep    build dependencies"
   echo ""
-  echo "usage: makenek [.usr filename | clean] < -nocompile >"
-  echo ""
-  exit 1
+  echo "PPLIST config options:" 
+  echo "  NOMPIIO       disable MPI-IO"
+  echo "  BGQ           use BGQ optimized mxm"
+  echo "  XSMM          use libxsmm for mxm"
+  echo "  CVODE         enable CVODE support"
+  echo "  HYPRE         enable HYPRE support"
+  echo "  VENDOR_BLAS   use VENDOR BLAS/LAPACK"
+  echo "  DPROCMAP      use distributed processor mapping"
+  echo "  PARRSB        use online RSB partitioner (experimental)"
+  return 11
 fi
+
+if [ "$VERMAKENEK" != "19.0.1" ]; then
+  echo "FATAL ERROR: Your makenek is incompatible!"
+  echo "Please upgrade to the version shipped the source"
+  return 11
+fi
+
+rm -rf build.log
+nargs=$#
 
 CASEDIR=`pwd`
 CASENAME=$1
-if [ $# -eq 0 ]; then
-   NCASEFILES=`find *.usr 2>/dev/null| wc -l`
-   if [ $NCASEFILES == "0" ]; then
-     echo "FATAL ERROR: Cannot find .usr file!"
-     exit 1
-   elif [ $NCASEFILES != "1" ]; then
-     echo "FATAL ERROR: Found multiple .usr files!"
-     echo "Please use makenek [.usr filename]"
-     exit 1
-   else
-     CASENAME=`find *.usr | sed 's/\.usr$//g'`
-   fi
-fi
+NODEP=0
+ONLYDEP=0
 
-if [ "$mver" != "18.0.0" ]; then
-  echo "FATAL ERROR: Your makenek is incompatible!"
-  echo "Please upgrade to the version shipped with your Nek source."
-  exit 1
-fi
-
+SOURCE_ROOT_BLAS="$NEK_SOURCE_ROOT/3rd_party/blasLapack"
+export SOURCE_ROOT_BLAS
 SOURCE_ROOT_GSLIB="$NEK_SOURCE_ROOT/3rd_party/gslib"
 export SOURCE_ROOT_GSLIB
-
 SOURCE_ROOT_PARRSB="$NEK_SOURCE_ROOT/3rd_party/parRSB"
 export SOURCE_ROOT_PARRSB
-
 SOURCE_ROOT_PARMETIS="$NEK_SOURCE_ROOT/3rd_party/parMETIS"
 export SOURCE_ROOT_PARMETIS
-
 SOURCE_ROOT_CVODE="$NEK_SOURCE_ROOT/3rd_party/cvode"
 export SOURCE_ROOT_CVODE
-
 SOURCE_ROOT_HYPRE="$NEK_SOURCE_ROOT/3rd_party/hypre"
 export SOURCE_ROOT_HYPRE
 
+NODEP=1
+if [ "$1" == "-build-dep" ]; then
+  ONLYDEP=1
+  nargs=0
+fi 
+
 if [[ $1 = "clean" ]]; then
   while true; do
-    read -p "do you want to clean all 3rd party software? [N]" yn
+    read -p "do you want to cleanup all 3rd party dependencies too? [N]" yn
     case $yn in
       [Yy]* )
-        clean_3rd_party; 
-        make clean;
+        clean_3rdparty; 
+        if [ -f makefile ]; then make clean; fi
         break ;;
       * ) 
-        make clean;
+        if [ -f makefile ]; then make clean; fi
         break ;;
     esac
   done
-  rm -rf compiler.out
+  rm -rf build.log
   rm -rf makefile
   rm -rf .state
-  exit 0
+  return 0
 fi
 
-NOCOMPILE=0
-if [[ "$2" == "-nocompile" ]]; then
-  NOCOMPILE=1
-fi 
-
-if [ ! -f ${CASENAME}'.usr' ]; then
-   echo "FATAL ERROR: Cannot find $1.usr!"
-   exit 1
-fi
-
-if [ -f SIZEu ]; then
-   if [ -f SIZE ]; then
-      echo "FATAL ERROR: found SIZEu and SIZE!"
-      exit 1
-   fi
-   NEK_WARN="WARNING: SIZEu will be deprecated in a future release!"
-   mv -v SIZEu SIZE
-fi
-
-if [ ! -f SIZE ]; then
-   echo "FATAL ERROR: Cannot find SIZE!"
-   exit 1
-fi
+#if [ -f makefile ] && [ $ONLYDEP -ne 1 ]; then
+#  while true; do
+#    echo "makefile exists already!"
+#    read -p "Are you sure you want to continue? [N]" yn
+#    case $yn in
+#      [Yy]* )
+#        break ;;
+#      * ) 
+#        return 0
+#        break ;;
+#    esac
+#  done
+#fi
 
 if [ ! -f $NEK_SOURCE_ROOT/core/makefile.template ]; then
   echo "FATAL ERROR: Cannot find $NEK_SOURCE_ROOT/core/makefile.template!"
-  exit 1
+  return 11
 fi
 
-# test if FC compiler exists
+# test compiler
 if ! which `echo $FC | awk '{print $1}'` 1>/dev/null ; then
   echo "FATAL ERROR: Cannot find `echo $FC | awk '{print $1}'`!"
-  exit 1
+  return 11
 fi
-
-
-# test if C compiler exists
 if ! which `echo $CC | awk '{print $1}'` 1>/dev/null ; then 
   echo "FATAL ERROR: Cannot find `echo $CC | awk '{print $1}'`!"
-  exit 1
+  return 11
 fi
 
 # trying to figure which compiler the wrapper is using 
@@ -223,28 +212,34 @@ fi
 
 # assign FC compiler specific flags
 case $FCcomp in
-  *pgf*)        FFLAGS+=" -r8 -Mpreprocess"
+  *pgf*)       FCPP="-Mpreprocess"
+               FR8="-r8"
                ;;
-  *gfortran*)   FFLAGS+=" -std=legacy -fdefault-real-8 -fdefault-double-8 -cpp"
+  *gfortran*)  FCPP="-cpp"
+               FR8="-fdefault-real-8 -fdefault-double-8"
+               FF77="-std=legacy"
                ;;
-  *ftn*)       FFLAGS+=" -sreal64 -eZ"
+  *ftn*)       FCPP="-eZ"
+               FR8="-sreal64"
                ;;
-  *armflang*)   FFLAGS+=" -r8 -cpp -std=legacy"
+  *armflang*)  FCPP="-cpp"
+               FR8="-r8"
+               FF77="-std=legacy"
                ;;
-  *ifort*)      FFLAGS+=" -r8 -fpconstant -fpp"
+  *ifort*)     FCPP="-fpp"
+               FR8="-r8 -fpconstant"
                ;;
-  *xlf*)        FFLAGS+=" -qfixed -qrealsize=8 -qdpc=e -qsuffix=cpp=f -qsuppress=cmpmsg"
-                PPPO="-WF,"
+  *xlf*)       FCPP="-qsuffix=cpp=f"
+               FR8="-qrealsize=8 -qdpc=e"
+               FF77="-qfixed"
+               PPPO="-WF,"
                ;;
   *)  echo "ERROR: Cannot find a supported compiler!"
       echo ""
-      NOCOMPILE=1
       read;;
 esac
 
-# initial clean-up
-rm -f $CASENAME.f nek5000 2>/dev/null
-rm -f ./obj/subuser.o 2>/dev/null
+LONGLONGINT=1
 
 # Check if the compiler adds an underscore to external functions
 UNDERSCORE=0
@@ -283,12 +278,12 @@ if [ $UNDERSCORE -ne 0 ]; then
   PPLIST="${PPLIST} UNDERSCORE"
 fi 
 
+if [ $LONGLONGINT -ne 0 ]; then
+  PPLIST="${PPLIST} GLOBAL_LONG_LONG"
+fi 
+
 if [ $PROFILING -ne 0 ]; then
-  if [ $MPI -ne 0 ]; then
-    PPLIST="${PPLIST} TIMER"
-  else
-    PPLIST="${PPLIST} TIMER"
-  fi
+  PPLIST="${PPLIST} TIMER"
 fi
 
 PPLIST="${PPLIST}"
@@ -302,7 +297,7 @@ PARMETIS=0
 CVODE=0
 HYPRE=0
 MXM_USER="mxm_std.o"
-BLAS="blas.o dsygv.o"
+VENDOR_BLAS=0 
 
 for i in $PPLIST
 do
@@ -346,30 +341,64 @@ do
      MXM_USER+=" mxm_bgq.o" 
    fi
    if [ "$i" == "VENDOR_BLAS" ]; then
-     BLAS=" "
+     VENDOR_BLAS=1
    fi
 done
 
+if [ $VENDOR_BLAS -ne 1 ]; then
+  USR_LFLAGS+=" -L$SOURCE_ROOT_BLAS -lblasLapack"
+fi
+
 # gslib build options
-GSLIB_PREFIX="gslib_"
-GSLIB_FPREFIX="fgslib_"
 GSLIB_OPT+=" DESTDIR=.."
 GSLIB_OPT+=" MPI=$MPI MPIIO=$MPIIO"
 GSLIB_OPT+=" ADDUS=$UNDERSCORE USREXIT=0 BLAS=2"
-GSLIB_OPT+=" PREFIX=$GSLIB_PREFIX FPREFIX=$GSLIB_FPREFIX"
-GSLIB_IFLAGS="-DPREFIX=$GSLIB_PREFIX -DFPREFIX=$GSLIB_FPREFIX -DGLOBAL_LONG_LONG"
-GSLIB_IFLAGS+=" -I$SOURCE_ROOT_GSLIB/include"
+GSLIB_IFLAGS=" -I$SOURCE_ROOT_GSLIB/include"
 USR_LFLAGS+=" -L$SOURCE_ROOT_GSLIB/lib -lgs"
 
-# tweak makefile template 
-echo "generating makefile ..."
+export FC
+export FCPP
+export FR8
+export FF77
+export CC
+export NEK_WARN 
+export MPI
+export MPIO
+export UNDERSCORE
+export GSLIB_OPT
+export PARRSB_OPT
+
+if [ $ONLYDEP -eq 1 ]; then
+  build_3rdparty
+  return 0 
+fi 
+
+if [ $nargs -eq 0 ]; then
+   NCASEFILES=`find *.usr 2>/dev/null| wc -l`
+   if [ $NCASEFILES == "0" ]; then
+     true
+   elif [ $NCASEFILES != "1" ]; then
+     echo "FATAL ERROR: Found multiple .usr files!"
+     echo "Please use makenek [.usr filename]"
+     return 11
+   else
+     CASENAME=`find *.usr | sed 's/\.usr$//g'`
+   fi
+fi
+
+if [ ! -f ${CASENAME}'.usr' ]; then
+   echo "FATAL ERROR: Cannot find $1.usr!"
+   return 11
+fi
+
+printf "generating makefile ... "
 rm -rf makefile 2>/dev/null
 
 sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s:^CC[ ]*=.*:CC=$CC:" \
--e "s:^FFLAGS[ ]*=.*:FFLAGS=$FFLAGS:" \
--e "s:^CFLAGS[ ]*=.*:CFLAGS=$CFLAGS:" \
--e "s:^LDFLAGS[ ]*=.*:LDFLAGS=$LDFLAGS:" \
+-e "s:^FFLAGS[ ]*+=.*:FFLAGS+=$FCPP $FR8 $FF77 $FFLAGS:" \
+-e "s:^CFLAGS[ ]*+=.*:CFLAGS+=$CFLAGS:" \
+-e "s:^LDFLAGS[ ]*+=.*:LDFLAGS+=$LDFLAGS:" \
 -e "s/^PPPO[ ]*=.*/PPPO=$PPPO/" \
 -e "s/^PPS[ ]*=.*/PPS=$PPLIST/" \
 -e "s:^MXM[ ]*=.*:MXM=$MXM_USER:" \
@@ -448,13 +477,28 @@ if [ -f .makefile ]; then
 ### makefile automatically created by makenek `date +"%m/%d/%Y %T"` ###" \
 -e "s:^CASEDIR[ ]*=.*:CASEDIR\:=${CASEDIR}:" \
 -e "s:^CASENAME[ ]*=.*:CASENAME\:=${CASENAME}:" .makefile > makefile 
+  printf "done\n"
 else
-  echo "ERROR: Nek Makefile could not be created!"
-  exit 1 
+  printf "failed!\n"
+  return 1 
 fi
 \rm .makefile 2>/dev/null
 
 # tweak SIZE file
+if [ -f SIZEu ]; then
+   if [ -f SIZE ]; then
+      echo "FATAL ERROR: found SIZEu and SIZE!"
+      return 11
+   fi
+   NEK_WARN="WARNING: SIZEu will be deprecated in a future release!"
+   mv -v SIZEu SIZE
+fi
+
+if [ ! -f SIZE ]; then
+   echo "FATAL ERROR: Cannot find SIZE!"
+   return 11
+fi
+
 if ! cat SIZE | grep -qi 'lelr' ; then
    echo >>SIZE
    echo 'c automatically added by makenek' >>SIZE
@@ -539,25 +583,13 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
   fi
 fi
 
-export FC
-export CC
-export NEK_WARN 
-export MPI
-export MPIO
-export FFLAGS
-export CFLAGS
-export UNDERSCORE
-export GSLIB_OPT
-export PARRSB_OPT
-
-if [ $NOCOMPILE -ne 0 ]; then
-  exit 0
-fi
-
 declare -a varlist=(
 "NEK_SOURCE_ROOT"
 "FC"
 "FFLAGS"
+"FCPP"
+"FR8"
+"FF77"
 "CC"
 "CFLAGS"
 "PPLIST"
@@ -566,13 +598,13 @@ if [ -f .state ]; then
   for i in "${varlist[@]}"
   do
     if ! cat .state | grep -q "$i=${!i}" ; then
-      echo "configuration change detected, forcing full rebuild"
+      echo "configuration change detected, preparing fresh build"
       rm -rf .state
       while true; do
-        read -p "do you want to rebuild all 3rd party software? [N]" yn
+        read -p "do you want to rebuild all 3rd party dependencies too? [N]" yn
         case $yn in
           [Yy]* )
-            clean_3rd_party;
+            clean_3rdparty;
             break ;;
           * )
            break ;;
@@ -589,3 +621,10 @@ for i in "${varlist[@]}"
 do
   echo "$i=${!i}" >> .state
 done ;
+
+if [ $NODEP -ne 1 ]; then
+  build_3rdparty
+fi
+
+return 0
+}

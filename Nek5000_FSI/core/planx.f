@@ -36,7 +36,7 @@ C
 
          call ophinv  (dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxv)
          call opadd2  (vx,vy,vz,dv1,dv2,dv3)
-c
+
          call incomprn(vx,vy,vz,pr)
 C
       ENDIF

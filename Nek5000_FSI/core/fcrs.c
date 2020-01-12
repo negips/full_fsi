@@ -2,16 +2,11 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include "c99.h"
-#include "name.h"
-#include "fail.h"
-#include "types.h"
-#include "mem.h"
-#include "comm.h"
+#include "gslib.h"
 #include "crs.h"
 
 /*--------------------------------------------------------------------------
-   FORTRAN Interface to coarse solver
+   FORTRAN wrapper interface to coarse solver
   --------------------------------------------------------------------------*/
 
 #undef crs_xxt_setup
@@ -50,7 +45,8 @@ while(0)
 void fcrs_setup(sint *handle, const sint *sid, const MPI_Fint *comm, const sint *np,
                 const sint *n, const slong id[], const sint *nz,
                 const sint Ai[], const sint Aj[], const double A[],
-                const sint *null_space, const double *param)
+                const sint *null_space, const double *param,
+                const char *datafname, uint *ierr)
 {
   struct comm c;
   if(handle_n==handle_max)
@@ -67,7 +63,8 @@ void fcrs_setup(sint *handle, const sint *sid, const MPI_Fint *comm, const sint 
                                                   *null_space,&c); break;
     case 1: handle_array[handle_n]=ccrs_amg_setup(*n,(const ulong*)id,
                                                   *nz,(const uint*)Ai,(const uint*)Aj,A,
-                                                  *null_space,&c); break;
+                                                  *null_space,&c,
+                                                  datafname,ierr); break;
     case 2: handle_array[handle_n]=ccrs_hypre_setup(*n,(const ulong*)id,
                                                   *nz,(const uint*)Ai,(const uint*)Aj,A,
                                                   *null_space,&c,param); break;

@@ -1743,7 +1743,6 @@ C-----------------------------------------------------------------------
       INTEGER IR(ldim),IC(ldim)
       REAL BD(1),DTBD(1)
 C
-      CALL RZERO (BD,10)
       IF (NBD.EQ.1) THEN
          BD(1) = 1.
          BDF   = 1.
@@ -2496,7 +2495,7 @@ c-----------------------------------------------------------------------
 
       integer e,f
       logical ifxy
- 
+      real length
  
 c     (1) Face n-t transformation
 
@@ -2516,11 +2515,16 @@ c     (1) Face n-t transformation
 
                dotprod = unx(k,1,f,e)*ym1(j1,j2,1,e)
      $                  -uny(k,1,f,e)*xm1(j1,j2,1,e)
-               ifxy = .false.
-               if (abs(unz(k,1,f,e)).lt.0.0001) ifxy = .true.
+     
+               ifxy = .true.
+      
+               length = unx(k,1,f,e)*unx(k,1,f,e) 
+     $               + uny(k,1,f,e)*uny(k,1,f,e)
+               length = sqrt(length)
 
-               cost =  unx(k,1,f,e)
-               sint =  uny(k,1,f,e)
+               cost =  unx(k,1,f,e)/length
+               sint =  uny(k,1,f,e)/length
+               
                rnor = ( r1(j1,j2,1,e)*cost + r2(j1,j2,1,e)*sint )
                rtn1 = (-r1(j1,j2,1,e)*sint + r2(j1,j2,1,e)*cost )
 
@@ -2543,11 +2547,15 @@ c     (1) Face n-t transformation
 
                dotprod = unx(k,1,f,e)*ym1(j1,j2,1,e)
      $                  -uny(k,1,f,e)*xm1(j1,j2,1,e)
-               ifxy = .false.
-               if (abs(unz(k,1,f,e)).lt.0.0001) ifxy = .true.
-
-               cost =  unx(k,1,f,e)
-               sint =  uny(k,1,f,e)
+               ifxy = .true.
+               
+               length = unx(k,1,f,e)*unx(k,1,f,e) 
+     $               + uny(k,1,f,e)*uny(k,1,f,e)
+               length = sqrt(length)
+               
+               cost =  unx(k,1,f,e)/length
+               sint =  uny(k,1,f,e)/length
+               
                rnor = ( r1(j1,j2,1,e)*cost - r2(j1,j2,1,e)*sint )
                rtn1 = ( r1(j1,j2,1,e)*sint + r2(j1,j2,1,e)*cost )
 

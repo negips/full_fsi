@@ -1,4 +1,4 @@
-# Release v19.0-rc2
+# Release 19.0                                              
 
 ## What is new? 
 
@@ -11,8 +11,8 @@
 * RANS k-Omega and k-Omega-SST (experimental) 
 * Online mesh-smoother (experimental)
 * ElapsedTime option for writeControl (in par)
-* Print runtime-statistics every 100 steps
-* Support for GNU 8.x compilers
+* Print runtime-statistics every 500 steps
+* Support for GNU > 8.x compilers
 * Support for Cray compilers
 * Support for ARM compilers
 * Add AVM regularization for scalars (experimental)
@@ -21,7 +21,12 @@
 * CHT support for generic fld reader
 * Overwrite core routines in usr
 * Lagrangian phase model - LPM (experimental)
-* Support parMetis partitioner
+* Distributed gllnid/gllel (experimental) 
+* Add parMetis partitioner
+* Add parRSB partitioner
+* Add CGNS mesh converter
+* Support p0th with Helmholtz 
+* Update to GSLIB v1.0.5 and HYPRE v2.15.1
 * Various bug fixes
 
 ## What you may have to change to be compatible 
@@ -31,16 +36,19 @@
 * Remove multimesh_create call from usr file (not required anymore)
 * Adjust calls to interpolation wrapper according to new interface in interp.f
 * Remove common block CTORQ from usr (now part of OBJDATA included in TOTAL)
-* Use amg_setup tool instead of amg_hypre (required for semg_amg preconditioner) 
+* Use nekamg_setup tool instead of amg_hypre (required for semg_amg preconditioner) 
 * Your parameters to the reserved user space param(170) - param(200) 
-* Set lelr in SIZE for a restart using muliple files (check value in hdr) 
+* Set lelr in SIZE for restart using muliple files (check value in file header) 
 * Use planar_avg() instead of planar_average_z etc. 
+* Rename AMG input files (example: amg_Aff.dat -> ethier.amgAff.dat) 
 
 ## Known Bugs 
 
-[562](https://github.com/Nek5000/Nek5000/issues/562),
-[474](https://github.com/Nek5000/Nek5000/issues/474),
-[407](https://github.com/Nek5000/Nek5000/issues/407),
+[643](https://github.com/Nek5000/Nek5000/issues/643)
+[635](https://github.com/Nek5000/Nek5000/issues/635)
+[634](https://github.com/Nek5000/Nek5000/issues/634)
+[628](https://github.com/Nek5000/Nek5000/issues/628)
+[562](https://github.com/Nek5000/Nek5000/issues/562)
 [65](https://github.com/Nek5000/Nek5000/issues/65)
 
 ## Thanks to our Contributors

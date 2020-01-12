@@ -55,7 +55,6 @@ c-----------------------------------------------------------------------
         ux = ext_vx(ix,iy,iz,iel)
         uy = ext_vy(ix,iy,iz,iel)
         uz = ext_vz(ix,iy,iz,iel)
-        if (nfld_neknek.gt.3) temp = valint(ix,iy,iz,iel,ldim+2)
       end if
       
       return
@@ -77,7 +76,7 @@ c -----------------------------------------------------------------------
       if (fsi_ifstruct) then
         ux  = 0.0 + 0*cos(x)
       else
-        ux = 1.0 + amp*cos(x)
+        ux = 0.0 + amp*cos(x)
       endif  
      
       uy = amp*sin(y)
@@ -108,11 +107,14 @@ c-----------------------------------------------------------------------
       endif
 
       if (uparam(1).eq.1) then
+        fsi_ifstruct = .false.
+        fsi_iffluid  = .true.
+      elseif (uparam(1).eq.2) then
         fsi_ifstruct = .true.
         fsi_iffluid  = .false.
       else
         fsi_ifstruct = .false.
-        fsi_iffluid  = .true.
+        fsi_iffluid  = .false.
       endif            
 
       return
@@ -165,17 +167,48 @@ c-----------------------------------------------------------------------
 
       real scale
 
+      common /c_is1/ glo_num(1*lx1*ly1*lz1*lelv)
+      integer*8 glo_num
+      real tmp(lx1*ly1*lz1*lelv)
+      real tmp2(lx1*ly1*lz1*lelv)
+      real tmp3(lx1*ly1*lz1*lelv)
+
+
+      if (istep.eq.0) then
+        nt = nx1*ny1*nz1*nelv
+        do i=1,nt
+          tmp(i)=glo_num(i)+0.
+          tmp2(i)=v1mask(i,1,1,1)+0.
+          tmp3(i)=v2mask(i,1,1,1)+0.
+        enddo
+        
+        call outpost(tmp2,tmp3,tmp,pr,t,'glo') 
+      endif        
 
       fsi_iftran = .true. 
 
       call fsi_coupling
 
+!      call outpost(ts1,ts2,ts3,pr,t,'ts1')
+!      call outpost(ts4,ts5,ts6,pr,t,'ts4')
+
+      call opzero(ts1,ts2,ts3)
+
+      ifto = .true.
+      nt = nx1*ny1*nz1*nelv
+      call copy(t,cflf,nt)
 
       
       return
       end
 c -----------------------------------------------------------------------
 
+
+c automatically added by makenek
+      subroutine usrdat0() 
+
+      return
+      end
 
 c automatically added by makenek
       subroutine usrsetvert(glo_num,nel,nx,ny,nz) ! to modify glo_num

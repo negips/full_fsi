@@ -121,7 +121,7 @@ c-----------------------------------------------------------------------
       n  = nelv*nx1*ny1*nz1
       n2 = nelv*nx2*ny2*nz2
 
-      if (mod(istep,100).ne.0) return
+c      if (mod(istep,100).ne.0) return
 
       call exactu(uxe,uye,uze,xm1,ym1,zm1,n)
       call exactp(pre,xm2,ym2,zm2,n2)
@@ -221,10 +221,15 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
+      a = -1.0
+      b = 1.0
+      call rescale_x(xm1,a,b)
+      call rescale_x(ym1,a,b)
+      call rescale_x(zm1,a,b)
+
       do iel=1,nelt
       do ifc=1,2*ndim
-         idss = bc(5,ifc,iel,1)
-         if (idss.eq.1) cbc(ifc,iel,1)='v  '
+         if (boundaryID(ifc,iel) .eq. 1) cbc(ifc,iel,1)='v  '
       enddo
       enddo
 

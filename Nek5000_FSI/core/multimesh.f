@@ -38,9 +38,6 @@ c-------------------------------------------------------------
       integer nfld_neknek
       common /inbc/ nfld_neknek
 
-      call fix_geom
-      call geom_reset(1) ! recompute Jacobians, etc.
-
       if (icalld.eq.0.and.nid.eq.0) write(6,*) 'setup neknek'
 
       if (nsessmax.eq.1) 
@@ -49,23 +46,25 @@ c-------------------------------------------------------------
       call setup_neknek_wts
 
       if (icalld.eq.0) then
-         nfld_neknek = ldim+nfield
-         call nekneksanchk
+         ! just in case we call setup from usrdat2 
+         call fix_geom
+         call geom_reset(1)
+
          call set_intflag
          call neknekmv
          if (nid.eq.0) write(6,*) 'session id:', idsess
          if (nid.eq.0) write(6,*) 'extrapolation order:', ninter
          if (nid.eq.0) write(6,*) 'nfld_neknek:', nfld_neknek
+
+         nfld_min = iglmin_ms(nfld_neknek,1)
+         nfld_max = iglmax_ms(nfld_neknek,1)
+         if (nfld_min .ne. nfld_max) then
+            nfld_neknek = nfld_min 
+            if (nid.eq.0) write(6,*)
+     $         'WARNING: reset nfld_neknek to ', nfld_neknek
+         endif
       endif
 
-      nfld_min = iglmin_ms(nfld_neknek,1)
-      nfld_max = iglmax_ms(nfld_neknek,1)
-      if (nfld_min .ne. nfld_max) then
-         nfld_neknek = nfld_min 
-         if (nid.eq.0) write(6,*)
-     $      'WARNING: reset nfld_neknek to ', nfld_neknek
-      endif
- 
 c     Figure out the displacement for the first mesh 
       call setup_int_neknek(dxf,dyf,dzf)  !sets up interpolation for 2 meshes
 
@@ -100,7 +99,6 @@ c     Boundary conditions are changed back to 'v' or 't'.
       nflag=nelt*nfaces
       call izero(intflag,nflag)
 
-
       do j=1,nfield
          nel = nelfld(j)
       do e=1,nel
@@ -116,16 +114,15 @@ c            if (cb.eq.'inp') cbc(f,e,ifield)='o  ' ! Pressure
 
 !           mod_structural            
             if (cb.eq.'ins') cbc(f,e,j)='s  ' ! traction
-           
          endif
       enddo
       enddo
       enddo
 
-c     zero out valint
-      do i=1,nfld_neknek
-        call rzero(valint(1,1,1,1,i),lx1*ly1*lz1*nelt)
-      enddo
+c      zero out valint
+       do i=1,nfld_neknek
+         call rzero(valint(1,1,1,1,i),lx1*ly1*lz1*nelt)
+       enddo
 
       return
       end
@@ -259,7 +256,7 @@ c     Get diamter of the domain
       mn_glob = glmin_ms(xm1,lx1*ly1*lz1*nelt)
       dx1 = mx_glob-mn_glob
 
-      dxf = 10.+dx1            ! why do we do this?
+      dxf = 10.+dx1
       dyf = 0.
       dzf = 0.
 
@@ -277,7 +274,6 @@ c     Setup findpts
       nzf     = 2*lz1
       bb_t    = 0.01 ! relative size to expand bounding boxes by
 
-!     why istep.gt.1?      
       if (istep.gt.1) call fgslib_findpts_free(inth_multi2)
       call fgslib_findpts_setup(inth_multi2,mpi_comm_world,npall,ldim,
      &                          xm1,ym1,zm1,lx1,ly1,lz1,
@@ -390,7 +386,7 @@ c     Make sure rcode_all is fine
 
       if (rcode_all(i).lt.2) then
 
-         if (rcode_all(i).eq.1.and.dist_all(i).gt.1e-02) then
+        if (rcode_all(i).eq.1.and.dist_all(i).gt.1e-02) then
            if (ldim.eq.2) write(6,*)
      &     'WARNING: point on boundary or outside the mesh xy[z]d^2: '
            if (ldim.eq.3) write(6,*)
@@ -459,12 +455,12 @@ c     Interpolate using findpts_eval
          
 c     Now we can transfer this information to valint array from which
 c     the information will go to the boundary points
-      do i=1,npoints_nn
+       do i=1,npoints_nn
         idx = iList(1,i)
         do ifld=1,nfld_neknek
           valint(idx,1,1,1,ifld)=fieldout(i,ifld)
         enddo
-      enddo
+       enddo
 
       call nekgsync()
       etime = dnekclock() - etime1

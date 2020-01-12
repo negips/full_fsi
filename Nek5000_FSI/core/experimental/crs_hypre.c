@@ -2,19 +2,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include "c99.h"
-#include "name.h"
-#include "fail.h"
-#include "types.h"
-#include "mem.h"
-#include "gs_defs.h"
-#include "comm.h"
-#include "gs.h"
-#include "crystal.h"
-#include "sort.h"
-#include "sarray_sort.h"
-#include "sarray_transfer.h"
-
+#include "gslib.h"
 #include "crs_hypre.h"
 
 #ifdef HYPRE
@@ -57,10 +45,10 @@ struct hypre_crs_data *ccrs_hypre_setup( uint n, const ulong *id,
   // Set AMG parameters
   if (uparam) {
       int i;
-      for (i = 1; i < NPARAM; i++) {
-          hypre_param[i-1] = param[i]; 
+      for (i = 0; i < NPARAM; i++) {
+          hypre_param[i] = param[i+1]; 
            if (comm->id == 0)
-              printf("Custom HYPREsettings[%d]: %.2f\n", i, hypre_param[i-1]);
+              printf("Custom HYPREsettings[%d]: %.2f\n", i+1, hypre_param[i]);
       }
   } else {
       hypre_param[0] = 10;    /* HMIS                       */

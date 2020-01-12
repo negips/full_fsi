@@ -45,31 +45,24 @@ C--------------------------------------------------------------------
 
 c     Set default logicals
 
-      IFDOIT    = .FALSE.
-      IFCVODE   = .false.
-      IFEXPLVIS = .false.
+      ifdoit    = .false.
+      ifcvode   = .false.
+      ifexplvis = .false.
+      ifvvisp   = .true.
 
       ifsplit = .false.
       if (lx1.eq.lx2) ifsplit=.true.
 
       if_full_pres = .false.
 
-c     Turn off (on) diagnostics for communication
-      IFGPRNT= .FALSE.
-
       CALL RZERO (PARAM,200)
-C
-C     The initialization of CBC is done in READAT
-C
-C      LCBC = 3*6*LELT*(LDIMT1+1)
-C      CALL BLANK(CBC,LCBC)
-C
+
       CALL BLANK(CCURVE ,12*LELT)
       NEL8 = 8*LELT
       CALL RZERO(XC,NEL8)
       CALL RZERO(YC,NEL8)
       CALL RZERO(ZC,NEL8)
-C
+
       NTOT=lx1*ly1*lz1*LELT
       CALL RZERO(ABX1,NTOT)
       CALL RZERO(ABX2,NTOT)
@@ -83,6 +76,8 @@ C
       NTOT=lx2*ly2*lz2*LELT
       CALL RZERO(USRDIV,NTOT)
       CALL RZERO(QTL,NTOT)
+
+      NSTEPS = 0
 
       RETURN
       END
@@ -154,6 +149,10 @@ C------------------------------------------------------------------------
       include 'GEOM'
       include 'DEALIAS'
       include 'TSTEP'
+      include 'NEKNEK'
+
+      param(120) = 500 ! print runtime stats
+
 C
 C     Geometry on Mesh 3 or 1?
 C
@@ -191,7 +190,7 @@ C
       NMXV   = 1000
       if (iftran) NMXV = 200
       NMXH   =  NMXV ! not used anymore
-      NMXP   = 1000
+      NMXP   = 200
       do ifield = 2,ldimt+1
          NMXT(ifield-1) = 200 
       enddo 
@@ -274,12 +273,17 @@ C     Initialize time step array.
 C
       NBD    = 0
       CALL RZERO (DTLAG,10)
-C
-C     Useful constants
-C
+
+      ! neknek 
+      ifneknekm = .false.
+      ninter = 1
+      nfld_neknek = ndim + nfield
+
+      CALL BLANK(cbc_bmap,sizeof(cbc_bmap))
+
       one = 1.
       PI  = 4.*ATAN(one)
-C
+
       RETURN
       END
 C
@@ -936,21 +940,6 @@ c-----------------------------------------------------------------------
 
 c      call opcount(3)      ! print op-counters
 
-      call nek_comm_getstat(comm_timers,comm_counters)
-      tgp2     = comm_timers(1)
-      tgop_sync = comm_timers(2)
-      twal      = comm_timers(3)
-      tsyc      = comm_timers(4)
-      tirc      = comm_timers(5)
-      tisd      = comm_timers(6)       
-      trc       = comm_timers(7)
-      tsd       = comm_timers(8)
-      ngp2     = comm_counters(1)
-      nwal      = comm_counters(3)
-      nsyc      = comm_counters(4)
-      nirc      = comm_counters(5)
-      nisd      = comm_counters(6)
-
       tcomm  = tisd + tirc + tsyc + tgp2+ twal + trc + tsd
       min_comm = tcomm
       call gop(min_comm,wwork,'m  ',1)
@@ -1166,50 +1155,15 @@ c         pdsmn=tdsmn/tttstp
 c         write(6,*) 'dsmn time',ndsmn,tdsmn,pdsmn
 c         pslvb=tslvb/tttstp
 c         write(6,*) 'slvb time',nslvb,tslvb,pslvb
+
          pddsl=tddsl/tttstp
          write(6,*) 'ddsl time',nddsl,tddsl,pddsl
-c
-c          pbsol=tbsol/tttstp
+
+c         pbsol=tbsol/tttstp
 c         write(6,*) 'bsol time',nbsol,tbsol,pbsol
 c         pbso2=tbso2/tttstp
 c         write(6,*) 'bso2 time',nbso2,tbso2,pbso2
 
-#ifdef MPITIMER
-         write(6,'(/,A)') 'MPI timings'
-c        MPI timings         
-         write(6,*) 'comm min ',min_comm
-         write(6,*) 'comm max ',max_comm 
-         write(6,*) 'comm avg ',avg_comm 
-         write(6,*) 'total comm %',max_comm/ttime
-
-c        MPI_Barrier timings
-         psyc=tsyc/tcomm
-         write(6,*) 'barrier time',nsyc,tsyc,psyc 
-         write(6,*) 'barrier min ',min_syc 
-         write(6,*) 'barrier max ',max_syc 
-         write(6,*) 'barrier avg ',avg_syc 
-
-c        MPI_Waitall timings
-         pwal=twal/tcomm
-         write(6,*) 'waitall time',nwal,twal,pwal 
-         write(6,*) 'waitall min ',min_wal 
-         write(6,*) 'waitall max ',max_wal 
-         write(6,*) 'waitall avg ',avg_wal 
-
-c        MPI_Allreduce timings
-         pgp2=tgp2/tcomm
-         write(6,*) 'allreduce  time',ngp2,tgp2,pgp2 
-         write(6,*) 'allreduce  min ',min_gop 
-         write(6,*) 'allreduce  max ',max_gop 
-         write(6,*) 'allreduce  avg ',avg_gop 
-
-c        MPI_Allreduce(sync) timings
-         pgop_sync=tgop_sync/tcomm
-         write(6,*) 'allreduce_sync  time',tgop_sync,pgop_sync 
-         write(6,*) 'allreduce_sync  min ',min_gop_sync 
-         write(6,*) 'allreduce_sync  max ',max_gop_sync 
-         write(6,*) 'allreduce_sync  avg ',avg_gop_sync 
-#endif
          write(6,*) ''
       endif
 
@@ -1333,10 +1287,9 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       COMMON /SCRNS/ WORK(LCTMP1)
 
-      integer*8 i8glsum
-      integer*8 ntot,ntotp,ntotv, nn
+      integer*8 ntot,ntotp,ntotv
 
-      nxyz  = lx1*ly1*lz1
+      nxyz  = nx1*ny1*nz1
       nel   = nelv
 
       ! unique points on v-mesh
@@ -1348,19 +1301,19 @@ c-----------------------------------------------------------------------
       ppts = glsum(work,1) + .1
       ntot=ppts
 C
-      if (nio.eq.0) write(6,'(A,2i13)') 
+      if (nio.eq.0) write(6,'(A,2i13)')
      &   'gridpoints unique/tot: ',nvtot,ntot
 
-      ntot1=lx1*ly1*lz1*nelv
-      ntot2=lx2*ly2*lz2*nelv
+      ntot1=nx1*ny1*nz1*nelv
+      ntot2=nx2*ny2*nz2*nelv
 
       ntotv = glsc2(tmult,tmask,ntot1)
-      nn = ntot2
-      ntotp = i8glsum(nn,1)
+      ntotp = i8glsum(ntot2,1)
 
-c      if (ifflow)  ntotv = glsc2(vmult,v1mask,ntot1)
-c      if (ifsplit) ntotp = glsc2(vmult,pmask ,ntot1)
-c      if (nio.eq.0) write(6,*) ' dofs:',ntotv,ntotp
+      if (ifflow)  ntotv = glsc2(vmult,v1mask,ntot1)
+      if (ifsplit) ntotp = glsc2(vmult,pmask ,ntot1)
+      if (nio.eq.0) write(6,'(A,2i13)') 
+     $   'dofs vel/pr:           ',ntotv,ntotp
 
       return
       end
