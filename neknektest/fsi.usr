@@ -192,7 +192,15 @@ c-----------------------------------------------------------------------
 !      call outpost(ts1,ts2,ts3,pr,t,'ts1')
 !      call outpost(ts4,ts5,ts6,pr,t,'ts4')
 
-      call opzero(ts1,ts2,ts3)
+      if (fsi_ifstruct.and.(mod(istep,iostep).eq.0)
+     $      .and.(istep.gt.0)) then
+        call opcopy(ts1,ts2,ts3,xm1,ym1,zm1)
+        call opadd2(xm1,ym1,zm1,vx,vy,vz)
+
+        call outpost(velx,vely,velz,pr,t,'vel')
+        call opcopy(xm1,ym1,zm1,ts1,ts2,ts3)
+      endif        
+
 
       ifto = .true.
       nt = nx1*ny1*nz1*nelv

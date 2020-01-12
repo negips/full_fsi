@@ -63,9 +63,6 @@
         call fluid_forces(struct_ssx,struct_ssy,struct_ssz,
      $                    vx,vy,vz,pr,scale)
 
-        call outpost(struct_ssx,struct_ssy,struct_ssz,pr,t,'str')
-
-
 !       Send fluid stresses to structure
         call fsi_neknek_stressex
 
@@ -107,8 +104,6 @@
 
 !         Get fluid stresses            
           call fsi_neknek_stressex
-
-          call outpost(struct_ssx,struct_ssy,struct_ssz,pr,t,'str')
 
 !         Solve structural equation                  
           call plan_s               ! receive interface stresses
@@ -170,9 +165,9 @@
 
       real etime,tsync
 
-      if (nio.eq.0) write(6,98) 
-     $   ' Multidomain data exchange ... ', nfld_neknek
- 98   format(12x,a,i3)
+!      if (nio.eq.0) write(6,98) 
+!     $   ' Multidomain data exchange ... ', nfld_neknek
+! 98   format(12x,a,i3)
 
       etime0 = dnekclock_sync()
       call neknekgsync()
@@ -249,9 +244,9 @@ c--------------------------------------------------------------------------
 
       real etime,tsync
 
-      if (nio.eq.0) write(6,98) 
-     $   ' Multidomain data exchange ... ', nfld_neknek
- 98   format(12x,a,i3)
+!      if (nio.eq.0) write(6,98) 
+!     $   ' Multidomain data exchange ... ', nfld_neknek
+! 98   format(12x,a,i3)
 
       etime0 = dnekclock_sync()
       call neknekgsync()
@@ -341,6 +336,7 @@ c     Compute fluid forces
       real fx(lx1,ly1,lz1,lelt),fy(lx1,ly1,lz1,lelt)
       real fz(lx1,ly1,lz1,lelt)
 
+      real tmp_mult(lx1,ly1,lz1,lelt)     ! since vertices/edges are on multiple faces
       real dpdx_mean,dpdy_mean,dpdz_mean
       real scale
 
@@ -354,6 +350,9 @@ c     Compute fluid forces
       real dg(3,2)
 
       n = lx1*ly1*lz1*nelv
+
+      call opzero(fx,fy,fz)
+      call rzero(tmp_mult,n)
 
       call mappr(pm1,pr2,xm0,ym0) ! map pressure onto Mesh 1
 
@@ -431,9 +430,11 @@ c     Compute fluid forces
               call cmult(dg,scale,6)
 
 !             f = pressure force + viscous force
-              fx(j1,j2,1,e) = dg(1,1) + dg(1,2)
-              fy(j1,j2,1,e) = dg(2,1) + dg(2,2)
-              fz(j1,j2,1,e) = dg(3,1) + dg(3,2)
+              fx(j1,j2,1,e) = fx(j1,j2,1,e) + dg(1,1) + dg(1,2)
+              fy(j1,j2,1,e) = fy(j1,j2,1,e) + dg(2,1) + dg(2,2)
+              fz(j1,j2,1,e) = fz(j1,j2,1,e) + dg(3,1) + dg(3,2)
+
+              tmp_mult(j1,j2,1,e) = tmp_mult(j1,j2,1,e) + 1.
 
             enddo       ! j2
             enddo       ! j1
@@ -462,14 +463,43 @@ c     Compute fluid forces
               call cmult(dg,scale,6)
 
 !             f = pressure force + viscous force
-              fx(j1,j2,1,e) = dg(1,1) + dg(1,2)
-              fy(j1,j2,1,e) = dg(2,1) + dg(2,2)
+              fx(j1,j2,1,e) = fx(j1,j2,1,e) + dg(1,1) + dg(1,2)
+              fy(j1,j2,1,e) = fy(j1,j2,1,e) + dg(2,1) + dg(2,2)
+
+              tmp_mult(j1,j2,1,e) = tmp_mult(j1,j2,1,e) + 1.
             enddo       ! j2
             enddo       ! j1
           endif         ! if3d
         endif           ! if intflag(f,e).eq.1
       enddo             ! f=1,nfaces
       enddo             ! e=1,nelv
+
+
+      do e  = 1,nelt
+      do f  = 1,nfaces
+        if (intflag(f,e).eq.1) then
+          call dsset(lx1,ly1,lz1)    ! set up counters
+          pf     = eface1(f)         ! convert from preproc. notation
+          js1    = skpdat(1,pf)
+          jf1    = skpdat(2,pf)
+          jskip1 = skpdat(3,pf)
+          js2    = skpdat(4,pf)
+          jf2    = skpdat(5,pf)
+          jskip2 = skpdat(6,pf)
+
+          do j2=js2,jf2,jskip2
+          do j1=js1,jf1,jskip1
+            fx(j1,j2,1,e) = fx(j1,j2,1,e)/tmp_mult(j1,j2,1,e) 
+            fy(j1,j2,1,e) = fy(j1,j2,1,e)/tmp_mult(j1,j2,1,e)
+            if (if3d.or.ifaxis) then
+              fx(j1,j2,1,e) = fx(j1,j2,1,e)/tmp_mult(j1,j2,1,e)
+            endif
+          enddo   ! j1
+          enddo   ! j2
+        endif     ! intflag.eq.1          
+      enddo       ! f=1,nfaces
+      enddo       ! e=1,nelt
+    
 
       return
       end subroutine fluid_forces
