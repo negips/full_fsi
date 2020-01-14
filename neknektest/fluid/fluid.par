@@ -1,0 +1,44 @@
+#
+# nek parameter file
+#
+[GENERAL] 
+#startFrom = 
+stopAt = numSteps #endTime
+#endTime = 1.0
+numSteps =1
+
+dt = 2e-04
+timeStepper = bdf2 #char #steady
+variableDt = no 
+targetCFL = 0.5
+
+writeControl = timeStep #runTime
+writeInterval = 50
+
+userParam01 = 1      # Fluid solve
+userParam02 = 20     # writeInterval 1D statistics
+
+dealiasing = yes
+filtering = none #hpfrt, none, explicit
+filterWeight = 10.0
+filterCutoffRatio = 0.9
+
+[PROBLEMTYPE]
+equation = incompNS
+stressFormulation = no
+variableProperties = no
+
+[PRESSURE]
+preconditioner = semg_xxt
+residualTol = 1e-6
+residualProj = yes
+
+[VELOCITY]
+residualTol = 1e-8
+residualProj = yes
+density = 1.0
+viscosity = -1000
+advection = yes
+
+
+

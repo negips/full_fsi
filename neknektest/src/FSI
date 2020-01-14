@@ -11,10 +11,24 @@
       REAL EXT_VX(LX1,LY1,LZ1,LELV)  
       REAL EXT_VY(LX1,LY1,LZ1,LELV)
       REAL EXT_VZ(LX1,LY1,LZ1,LELV)
-     
+      REAL IRMASK(LX1,LY1,LZ1,LELV)
+
       common /FSI_SOLN/ SC_VX,SC_VY,SC_VZ,SC_PR,
-     $                  EXT_VX,EXT_VY,EXT_VZ
+     $                  EXT_VX,EXT_VY,EXT_VZ,IRMASK
  
+
+!     Interface velocity residuals
+!     Ideally I should turn this into surface arrays      
+      REAL RES_VX(LX1,LY1,LZ1,LELV,2)  
+      REAL RES_VY(LX1,LY1,LZ1,LELV,2)
+      REAL RES_VZ(LX1,LY1,LZ1,LELV,2)
+
+      common /FSI_IRESID/ RES_VX,RES_VY,RES_VZ
+
+      REAL FSI_OMEGA
+
+      common /FSI_RSC/ FSI_OMEGA
+
 
 !!     Mask arrays
 !!-------------------------------------------------- 

@@ -1,0 +1,40 @@
+-2                    spatial dimension
+1                     number of fields (U)
+#=======================================================================
+#
+#   .box file for channel flow
+#
+#    If nelx (y or z) < 0, then genbox automatically generates the
+#                          grid spacing in the x (y or z) direction
+#                          with a geometric ratio given by "ratio".
+#                          ( ratio=1 implies uniform spacing )
+#
+#    Note that the character bcs _must_ have 3 spaces.
+#
+#=======================================================================
+#
+Box1
+-6 -2                                 nelx,nely for Box
+0.0 3.0 1.0                                x0,xn,gain
+0.0 1.0 1.0                                y0,yn,gain
+v  ,int,W  ,   ,   ,  
+Box2
+-6 -2                                 nelx,nely for Box
+0.0 3.0 1.0                                x0,xn,gain
+1.0 2.0 1.0                                y0,yn,gain
+v  ,   ,   ,v  ,   ,  
+Box3
+-2 -2                                 nelx,nely for Box
+3.0 3.25 1.0                                x0,xn,gain
+1.0 2.0 1.0                                y0,yn,gain
+   ,   ,int,v  ,   ,   
+Box4
+-6 -2                                 nelx,nely for Box
+3.25 6.25 1.0                                x0,xn,gain
+0.0 1.0 1.0                                y0,yn,gain
+int,O  ,W  ,   ,   ,  
+Box5
+-6 -2                                 nelx,nely for Box
+3.25 6.25 1.0                                x0,xn,gain
+1.0 2.0 1.0                                y0,yn,gain
+   ,O  ,   ,v  ,   ,    

@@ -76,7 +76,7 @@ c -----------------------------------------------------------------------
       if (fsi_ifstruct) then
         ux  = 0.0 + 0*cos(x)
       else
-        ux = 0.0 + amp*cos(x)
+        ux = 1.0 + amp*cos(x)
       endif  
      
       uy = amp*sin(y)
@@ -155,6 +155,7 @@ c-----------------------------------------------------------------------
       include 'MASS'
       include 'NEKNEK'        ! igeom
       include 'GEOM'
+      include 'PARALLEL'
 
       integer ltmp
       parameter (ltmp=100)
@@ -163,7 +164,7 @@ c-----------------------------------------------------------------------
       real tst(ltmp)
 
       integer len2
-      integer i,nt
+      integer i,j,nt
 
       real scale
 
@@ -172,6 +173,7 @@ c-----------------------------------------------------------------------
       real tmp(lx1*ly1*lz1*lelv)
       real tmp2(lx1*ly1*lz1*lelv)
       real tmp3(lx1*ly1*lz1*lelv)
+      real rtmp
 
 
       if (istep.eq.0) then
@@ -179,11 +181,18 @@ c-----------------------------------------------------------------------
         do i=1,nt
           tmp(i)=glo_num(i)+0.
           tmp2(i)=v1mask(i,1,1,1)+0.
-          tmp3(i)=v2mask(i,1,1,1)+0.
+          tmp3(i)=imask(i,1,1,1)+0.
         enddo
-        
-        call outpost(tmp2,tmp3,tmp,pr,t,'glo') 
+!        do i=1,nelv
+!          j=(i-1)*lx1*ly1*lz1+1
+!          rtmp = lglel(i)+0.
+!          call cfill(tmp2(j),rtmp,lx1*ly1*lz1)
+!        enddo          
+        ifto=.true.  
+        call outpost(tmp,tmp2,tmp,pr,t,'glo') 
+        ifto=.false.
       endif        
+
 
       fsi_iftran = .true. 
 

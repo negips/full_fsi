@@ -19,8 +19,6 @@
 
       include 'SOLN'          ! just testing
 
-!      real resv1,resv2,resv3,resx1,resx2,resx3,h2
-
       real            resv1 (lx1,ly1,lz1,lelv)
      $ ,              resv2 (lx1,ly1,lz1,lelv)
      $ ,              resv3 (lx1,ly1,lz1,lelv)
@@ -638,11 +636,13 @@ C
       if (igeom.eq.2) then
 
 !       This is actually displacement            
-        call lagvel
+!        call lagvel
 
         call struct_bcdirvc(vx,vy,vz,v1mask,v2mask,v3mask)
         call struct_bcneutr       ! add user traction to rhs 
         call struct_fluidstress   ! add fluid traction to rhs
+
+        call outpost(bfx,bfy,bfz,pr,t,'bfs')
 
         call opcopy(resv1,resv2,resv3,vx,vy,vz)
 
@@ -1450,6 +1450,7 @@ c------------------------------------------------------------------------
 !     New Acceleration 
 !     An+1 = -[An - (4/DT^2)*(Un+1 - Un) + 4/DT*Vn]
       const = 4./DT
+      call opcopy(accx,accy,accz,axlag,aylag,azlag)
       call opadd2cm(accx,accy,accz,velx,vely,velz,const)
 
       const = -4./(DT**2)
@@ -1460,6 +1461,7 @@ c------------------------------------------------------------------------
 !     New velocity            
 !     Vn+1 = -[Vn - 2/DT*(Un+1 - Un)]
       const=-2./DT
+      call opcopy(velx,vely,velz,velxlag,velylag,velzlag)
       call opadd2cm(velx,vely,velz,resv1,resv2,resv3,const)
       call opcmult(velx,vely,velz,-1.)
 

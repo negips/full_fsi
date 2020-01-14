@@ -27,14 +27,24 @@
       real vely(lx1,ly1,lz1,lelv)
       real velz(lx1,ly1,lz1,lelv)
 
-      common /struct_vel/ velx,vely,velz
+      real velxlag(lx1,ly1,lz1,lelv)
+      real velylag(lx1,ly1,lz1,lelv)
+      real velzlag(lx1,ly1,lz1,lelv)
+
+      common /struct_vel/ velx,vely,velz,
+     $                    velxlag,velylag,velzlag       
 
 !     accelerations      
       real accx(lx1,ly1,lz1,lelv)
       real accy(lx1,ly1,lz1,lelv)
       real accz(lx1,ly1,lz1,lelv)
 
-      common /struct_acc/ accx,accy,accz
+      real axlag(lx1,ly1,lz1,lelv)
+      real aylag(lx1,ly1,lz1,lelv)
+      real azlag(lx1,ly1,lz1,lelv)
+
+      common /struct_acc/ accx,accy,accz,
+     $                    axlag,aylag,azlag       
 
 
       real struct_damp(lx1,ly1,lz1,lelv)     ! Damping coefficient
